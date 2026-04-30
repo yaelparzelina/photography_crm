@@ -35,4 +35,9 @@ describe('ConfirmDialog', () => {
     fireEvent.click(screen.getByText('בטל'))
     expect(props.onCancel).toHaveBeenCalled()
   })
+  it('calls onCancel on Escape key', () => {
+    render(<ConfirmDialog {...props} />)
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(props.onCancel).toHaveBeenCalled()
+  })
 })
