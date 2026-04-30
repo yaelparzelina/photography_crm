@@ -1,10 +1,24 @@
+import { useEffect } from 'react'
+
 export default function ConfirmDialog({ isOpen, title, message, confirmLabel = 'אישור', onConfirm, onCancel, destructive = false }) {
+  useEffect(() => {
+    if (!isOpen) return
+    const handleKey = (e) => { if (e.key === 'Escape') onCancel() }
+    document.addEventListener('keydown', handleKey)
+    return () => document.removeEventListener('keydown', handleKey)
+  }, [isOpen, onCancel])
+
   if (!isOpen) return null
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onCancel} />
-      <div className="relative bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm mx-4">
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="confirm-dialog-title"
+        className="relative bg-white rounded-2xl shadow-xl p-6 w-full max-w-sm mx-4"
+      >
+        <h3 id="confirm-dialog-title" className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
         <p className="text-gray-600 text-sm mb-6">{message}</p>
         <div className="flex gap-3 justify-start">
           <button onClick={onCancel}

@@ -11,6 +11,11 @@ const props = {
 }
 
 describe('ConfirmDialog', () => {
+  beforeEach(() => {
+    props.onConfirm = vi.fn()
+    props.onCancel = vi.fn()
+  })
+
   it('renders when open', () => {
     render(<ConfirmDialog {...props} />)
     expect(screen.getByText('מחיקת לקוח')).toBeInTheDocument()
