@@ -15,7 +15,7 @@ export default function App() {
       <Route path="/client/:linkId" element={<ClientProposal />} />
       <Route path="/sign/:linkId" element={<ClientSigning />} />
       <Route
-        path="/dashboard"
+        path="/dashboard/*"
         element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}
       >
         <Route index element={<Dashboard />} />
