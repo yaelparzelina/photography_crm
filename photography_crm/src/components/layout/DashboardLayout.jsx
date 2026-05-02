@@ -3,18 +3,23 @@ import { signOut } from 'firebase/auth'
 import { auth } from '../../firebase'
 import { Camera, Users, Settings, LogOut } from 'lucide-react'
 
+const navLinkClass = ({ isActive }) =>
+  `flex items-center gap-1.5 text-sm transition-colors ${
+    isActive ? 'text-gray-900 font-medium' : 'text-gray-500 hover:text-gray-900'
+  }`
+
 export default function DashboardLayout() {
   const navigate = useNavigate()
 
   async function handleLogout() {
-    await signOut(auth)
-    navigate('/login')
+    try {
+      await signOut(auth)
+    } catch (err) {
+      console.error('Logout failed', err)
+    } finally {
+      navigate('/login')
+    }
   }
-
-  const navLinkClass = ({ isActive }) =>
-    `flex items-center gap-1.5 text-sm transition-colors ${
-      isActive ? 'text-gray-900 font-medium' : 'text-gray-500 hover:text-gray-900'
-    }`
 
   return (
     <div className="min-h-screen bg-gray-50">

@@ -14,13 +14,12 @@ export default function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/client/:linkId" element={<ClientProposal />} />
       <Route path="/sign/:linkId" element={<ClientSigning />} />
-      <Route
-        path="/dashboard/*"
-        element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}
-      >
-        <Route index element={<Dashboard />} />
-        <Route path="clients/:id" element={<ClientTicket />} />
-        <Route path="settings" element={<Settings />} />
+      <Route element={<ProtectedRoute />}>
+        <Route path="/dashboard/*" element={<DashboardLayout />}>
+          <Route index element={<Dashboard />} />
+          <Route path="clients/:id" element={<ClientTicket />} />
+          <Route path="settings" element={<Settings />} />
+        </Route>
       </Route>
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
     </Routes>
