@@ -3,9 +3,9 @@ import { useCollectionData } from 'react-firebase-hooks/firestore'
 import { db } from '../firebase'
 
 const ref = collection(db, 'clients')
+const q = query(ref, orderBy('createdAt', 'desc'))
 
 export function useClients() {
-  const q = query(ref, orderBy('createdAt', 'desc'))
   const [clients, loading] = useCollectionData(q, { idField: 'id' })
 
   async function createClient(data) {

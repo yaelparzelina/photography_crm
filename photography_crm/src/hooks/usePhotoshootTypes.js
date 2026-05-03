@@ -3,9 +3,9 @@ import { useCollectionData } from 'react-firebase-hooks/firestore'
 import { db } from '../firebase'
 
 const ref = collection(db, 'photoshootTypes')
+const q = query(ref, orderBy('order', 'asc'))
 
 export function usePhotoshootTypes() {
-  const q = query(ref, orderBy('order', 'asc'))
   const [types, loading] = useCollectionData(q, { idField: 'id' })
 
   async function createType(name) {
