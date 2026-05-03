@@ -13,6 +13,9 @@ import { STATUS_OPTIONS } from '../utils/statusConfig'
 import { formatDate, toInputDate, fromInputDate } from '../utils/dateUtils'
 import { ArrowRight, Copy, Check, Trash2 } from 'lucide-react'
 
+const inputClass = 'w-full border border-gray-200 rounded-lg ps-4 pe-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300 bg-white'
+const labelClass = 'block text-sm font-medium text-gray-700 mb-1'
+
 export default function ClientTicket() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -29,6 +32,7 @@ export default function ClientTicket() {
   const [proposalLinkId, setProposalLinkId] = useState(null)
   const [copiedProposal, setCopiedProposal] = useState(false)
   const [copiedAgreement, setCopiedAgreement] = useState(false)
+  const [generatingProposal, setGeneratingProposal] = useState(false)
   const [activeLinkId, setActiveLinkId] = useState(null)
 
   const { packages } = usePackagesByType(form.photoshootTypeId)
@@ -67,13 +71,22 @@ export default function ClientTicket() {
   }
 
   async function handleDelete() {
-    await deleteClient(id)
-    navigate('/dashboard')
+    try {
+      await deleteClient(id)
+      navigate('/dashboard')
+    } catch {
+      // navigation only on success
+    }
   }
 
   async function handleGenerateProposal() {
-    const linkId = await createProposalLink(id, form.photoshootTypeId)
-    setProposalLinkId(linkId)
+    setGeneratingProposal(true)
+    try {
+      const linkId = await createProposalLink(id, form.photoshootTypeId)
+      setProposalLinkId(linkId)
+    } finally {
+      setGeneratingProposal(false)
+    }
   }
 
   function proposalUrl(linkId) {
@@ -82,9 +95,6 @@ export default function ClientTicket() {
   function agreementUrl(linkId) {
     return `${window.location.origin}${import.meta.env.BASE_URL}#/sign/${linkId}`
   }
-
-  const inputClass = 'w-full border border-gray-200 rounded-lg ps-4 pe-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300 bg-white'
-  const labelClass = 'block text-sm font-medium text-gray-700 mb-1'
 
   if (loading) return <div className="text-center py-20 text-gray-400">טוען...</div>
   if (!client) return <div className="text-center py-20 text-gray-500">לקוח לא נמצא</div>
@@ -190,14 +200,14 @@ export default function ClientTicket() {
             {proposalLinkId ? (
               <div className="space-y-2">
                 <input readOnly value={proposalUrl(proposalLinkId)}
-                  className="w-full text-xs border border-gray-200 rounded-lg px-3 py-2 bg-gray-50 text-gray-600" />
+                  className="w-full text-xs border border-gray-200 rounded-lg ps-3 pe-3 py-2 bg-gray-50 text-gray-600" />
                 <button onClick={() => { navigator.clipboard.writeText(proposalUrl(proposalLinkId)); setCopiedProposal(true); setTimeout(() => setCopiedProposal(false), 2000) }}
                   className="flex items-center gap-1 text-xs text-gray-600 hover:text-gray-900">
                   {copiedProposal ? <><Check className="w-3 h-3 text-green-600" /> הועתק!</> : <><Copy className="w-3 h-3" /> העתק קישור</>}
                 </button>
               </div>
             ) : (
-              <button onClick={handleGenerateProposal} disabled={!form.photoshootTypeId}
+              <button onClick={handleGenerateProposal} disabled={!form.photoshootTypeId || generatingProposal}
                 className="text-sm bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-700 disabled:opacity-40 transition-colors">
                 צור קישור
               </button>
@@ -209,7 +219,7 @@ export default function ClientTicket() {
             {activeLinkId ? (
               <div className="space-y-2">
                 <input readOnly value={agreementUrl(activeLinkId)}
-                  className="w-full text-xs border border-gray-200 rounded-lg px-3 py-2 bg-gray-50 text-gray-600" />
+                  className="w-full text-xs border border-gray-200 rounded-lg ps-3 pe-3 py-2 bg-gray-50 text-gray-600" />
                 <button onClick={() => { navigator.clipboard.writeText(agreementUrl(activeLinkId)); setCopiedAgreement(true); setTimeout(() => setCopiedAgreement(false), 2000) }}
                   className="flex items-center gap-1 text-xs text-gray-600 hover:text-gray-900">
                   {copiedAgreement ? <><Check className="w-3 h-3 text-green-600" /> הועתק!</> : <><Copy className="w-3 h-3" /> העתק קישור</>}

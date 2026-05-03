@@ -4,6 +4,8 @@ import ConfirmDialog from './ui/ConfirmDialog'
 import { useLinks } from '../hooks/useLinks'
 import { Copy, Check } from 'lucide-react'
 
+const inputClass = 'w-full border border-gray-200 rounded-lg ps-4 pe-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300'
+
 export default function AgreementEditorModal({ isOpen, onClose, client, packages, types, onLinkCreated }) {
   const { createAgreementLink } = useLinks()
   const [overrides, setOverrides] = useState({})
@@ -64,8 +66,6 @@ export default function AgreementEditorModal({ isOpen, onClose, client, packages
   const agreementUrl = (linkId) =>
     `${window.location.origin}${import.meta.env.BASE_URL}#/sign/${linkId}`
 
-  const inputClass = 'w-full border border-gray-200 rounded-lg ps-4 pe-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300'
-
   return (
     <>
       <Modal isOpen={isOpen} onClose={onClose} title="עריכת הסכם עבודה">
@@ -75,7 +75,7 @@ export default function AgreementEditorModal({ isOpen, onClose, client, packages
           <div className="space-y-3">
             <p className="text-sm text-green-700 font-medium">✓ הקישור נוצר בהצלחה</p>
             <input readOnly value={agreementUrl(generatedLinkId)}
-              className="w-full text-xs border border-gray-200 rounded-lg px-3 py-2 bg-gray-50 text-gray-600" />
+              className="w-full text-xs border border-gray-200 rounded-lg ps-3 pe-3 py-2 bg-gray-50 text-gray-600" />
             <button onClick={() => { navigator.clipboard.writeText(agreementUrl(generatedLinkId)); setCopied(true); setTimeout(() => setCopied(false), 2000) }}
               className="flex items-center gap-1.5 text-sm text-gray-700 border border-gray-200 rounded-lg px-4 py-2 hover:bg-gray-50">
               {copied ? <><Check className="w-4 h-4 text-green-600" /> הועתק!</> : <><Copy className="w-4 h-4" /> העתק קישור</>}
@@ -99,7 +99,7 @@ export default function AgreementEditorModal({ isOpen, onClose, client, packages
 
             <div className="flex items-center gap-3">
               <label className="text-sm font-medium text-gray-700">כולל אלבום מודפס</label>
-              <button type="button" onClick={() => set('includesAlbum', !overrides.includesAlbum)}
+              <button type="button" aria-label="החלף כולל אלבום" onClick={() => set('includesAlbum', !overrides.includesAlbum)}
                 className={`w-10 h-6 rounded-full transition-colors ${overrides.includesAlbum ? 'bg-green-500' : 'bg-gray-200'}`}>
                 <span className={`block w-4 h-4 bg-white rounded-full shadow mx-1 transition-transform ${overrides.includesAlbum ? '-translate-x-4 rtl:translate-x-4' : ''}`} />
               </button>
