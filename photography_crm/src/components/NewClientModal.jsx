@@ -18,9 +18,13 @@ export default function NewClientModal({ isOpen, onClose }) {
   async function handleSubmit(e) {
     e.preventDefault()
     setSaving(true)
-    const id = await createClient(form)
-    onClose()
-    navigate(`/dashboard/clients/${id}`)
+    try {
+      const id = await createClient(form)
+      onClose()
+      navigate(`/dashboard/clients/${id}`)
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -29,17 +33,17 @@ export default function NewClientModal({ isOpen, onClose }) {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">שם מלא *</label>
           <input required value={form.name} onChange={(e) => set('name', e.target.value)}
-            className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300" />
+            className="w-full border border-gray-200 rounded-lg ps-4 pe-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300" />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">טלפון</label>
           <input value={form.phone} onChange={(e) => set('phone', e.target.value)}
-            className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300" />
+            className="w-full border border-gray-200 rounded-lg ps-4 pe-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300" />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">סוג צילום</label>
           <select value={form.photoshootTypeId} onChange={(e) => set('photoshootTypeId', e.target.value)}
-            className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300 bg-white">
+            className="w-full border border-gray-200 rounded-lg ps-4 pe-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300 bg-white">
             <option value="">בחר סוג צילום</option>
             {types.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
           </select>

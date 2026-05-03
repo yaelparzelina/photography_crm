@@ -8,6 +8,13 @@ import NewClientModal from '../components/NewClientModal'
 import { formatDate } from '../utils/dateUtils'
 import { STATUS_OPTIONS } from '../utils/statusConfig'
 
+function SortIcon({ field, sortField, sortDir }) {
+  if (sortField !== field) return null
+  return sortDir === 'asc' ? <ChevronUp className="w-3 h-3 inline" /> : <ChevronDown className="w-3 h-3 inline" />
+}
+
+const thClass = 'px-4 py-3 text-xs font-medium text-gray-500 cursor-pointer hover:text-gray-900 select-none'
+
 export default function Dashboard() {
   const navigate = useNavigate()
   const { clients, loading } = useClients()
@@ -54,13 +61,6 @@ export default function Dashboard() {
     else { setSortField(field); setSortDir('asc') }
   }
 
-  function SortIcon({ field }) {
-    if (sortField !== field) return null
-    return sortDir === 'asc' ? <ChevronUp className="w-3 h-3 inline" /> : <ChevronDown className="w-3 h-3 inline" />
-  }
-
-  const thClass = 'px-4 py-3 text-xs font-medium text-gray-500 cursor-pointer hover:text-gray-900 select-none'
-
   if (loading) return <div className="text-center py-20 text-gray-400">טוען...</div>
 
   return (
@@ -92,10 +92,10 @@ export default function Dashboard() {
         <table className="w-full text-sm">
           <thead className="border-b border-gray-100 bg-gray-50">
             <tr>
-              <th className={thClass} onClick={() => handleSort('name')}>שם <SortIcon field="name" /></th>
+              <th className={thClass} onClick={() => handleSort('name')}>שם <SortIcon field="name" sortField={sortField} sortDir={sortDir} /></th>
               <th className={thClass}>סטטוס</th>
               <th className={thClass}>סוג צילום</th>
-              <th className={thClass} onClick={() => handleSort('shootDate')}>תאריך צילום <SortIcon field="shootDate" /></th>
+              <th className={thClass} onClick={() => handleSort('shootDate')}>תאריך צילום <SortIcon field="shootDate" sortField={sortField} sortDir={sortDir} /></th>
               <th className={thClass}>שילם מקדמה</th>
               <th className={thClass}>חוזה נחתם</th>
             </tr>

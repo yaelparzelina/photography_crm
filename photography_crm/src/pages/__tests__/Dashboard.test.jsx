@@ -191,18 +191,16 @@ describe('Dashboard', () => {
   it('clicking name column header sorts by name asc then desc on second click', () => {
     renderDashboard()
     const nameHeader = screen.getByRole('columnheader', { name: /שם/ })
-    // First click: sort by name asc
+    // First click: sort by name asc — י (yod) comes before ש (shin) in Hebrew alphabet
     fireEvent.click(nameHeader)
     let rows = screen.getAllByRole('row')
     // rows[0] is header row, rows[1] and rows[2] are data rows
-    const firstRowAfterAsc = within(rows[1]).queryByText('ישראל ישראלי') || within(rows[1]).queryByText('שרה כהן')
-    expect(firstRowAfterAsc).toBeTruthy()
+    expect(within(rows[1]).getByText('ישראל ישראלי')).toBeInTheDocument()
 
     // Second click: toggle to desc
     fireEvent.click(nameHeader)
     rows = screen.getAllByRole('row')
-    const firstRowAfterDesc = within(rows[1]).queryByText('ישראל ישראלי') || within(rows[1]).queryByText('שרה כהן')
-    expect(firstRowAfterDesc).toBeTruthy()
+    expect(within(rows[1]).getByText('שרה כהן')).toBeInTheDocument()
   })
 
   it('shows photoshoot type name from typeMap', () => {
