@@ -1,4 +1,4 @@
-import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, orderBy, where, getDocs } from 'firebase/firestore'
+import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, orderBy, where, getDocs, writeBatch } from 'firebase/firestore'
 import { useCollectionData } from 'react-firebase-hooks/firestore'
 import { db } from '../firebase'
 
@@ -18,9 +18,16 @@ export function usePhotoshootTypes() {
   }
 
   async function deleteType(id) {
-    const pkgSnap = await getDocs(query(collection(db, 'packages'), where('photoshootTypeId', '==', id)))
-    await Promise.all(pkgSnap.docs.map((d) => deleteDoc(d.ref)))
-    await deleteDoc(doc(db, 'photoshootTypes', id))
+    const [pkgSnap, clientSnap] = await Promise.all([
+      getDocs(query(collection(db, 'packages'), where('photoshootTypeId', '==', id))),
+      getDocs(query(collection(db, 'clients'), where('photoshootTypeId', '==', id))),
+    ])
+
+    const batch = writeBatch(db)
+    pkgSnap.docs.forEach((d) => batch.delete(d.ref))
+    clientSnap.docs.forEach((d) => batch.update(d.ref, { photoshootTypeId: '', packageId: '' }))
+    batch.delete(doc(db, 'photoshootTypes', id))
+    await batch.commit()
   }
 
   return { types: types ?? [], loading, createType, updateType, deleteType }

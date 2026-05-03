@@ -1,4 +1,4 @@
-import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, orderBy } from 'firebase/firestore'
+import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, orderBy, where, getDocs, writeBatch } from 'firebase/firestore'
 import { useCollectionData } from 'react-firebase-hooks/firestore'
 import { db } from '../firebase'
 
@@ -24,6 +24,14 @@ export function useClients() {
   }
 
   async function deleteClient(id) {
+    const linkSnap = await getDocs(
+      query(collection(db, 'links'), where('clientId', '==', id), where('active', '==', true))
+    )
+    if (!linkSnap.empty) {
+      const batch = writeBatch(db)
+      linkSnap.docs.forEach((d) => batch.update(d.ref, { active: false, deactivatedAt: serverTimestamp() }))
+      await batch.commit()
+    }
     await deleteDoc(doc(db, 'clients', id))
   }
 
