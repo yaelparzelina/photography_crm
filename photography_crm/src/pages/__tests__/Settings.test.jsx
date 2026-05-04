@@ -92,6 +92,7 @@ describe('Settings - TypesTab', () => {
     fireEvent.change(input, { target: { value: 'הריון' } })
     fireEvent.submit(input.closest('form'))
     await waitFor(() => expect(mockCreateType).toHaveBeenCalledWith('הריון'))
+    expect(input.value).toBe('')
   })
 
   it('does NOT call createType if input is empty', async () => {
@@ -110,17 +111,7 @@ describe('Settings - TypesTab', () => {
 
   it('edit button shows input with type name; Check saves via updateType; X cancels', async () => {
     renderSettings()
-    const editButtons = screen.getAllByRole('button', { name: '' }).filter(
-      (btn) => btn.querySelector('svg')
-    )
-    // Find edit button for 'בת מצווה' (first type)
-    const typeRow = screen.getByText('בת מצווה').closest('div[class*="rounded-xl"]')
-    const editBtn = typeRow.querySelector('button:has(svg)')
-    // Use Edit2 icon button - it's a button that contains the Edit2 svg
-    // Find all buttons within the row and pick the edit one (second after the up/down arrows)
-    const allBtnsInRow = Array.from(typeRow.querySelectorAll('button'))
-    // buttons: ChevronUp, ChevronDown, Edit2, Trash2
-    const editButton = allBtnsInRow[2]
+    const editButton = screen.getAllByRole('button', { name: 'ערוך' })[0]
     fireEvent.click(editButton)
 
     // Input should appear with current name
@@ -139,9 +130,7 @@ describe('Settings - TypesTab', () => {
 
   it('X button cancels editing without calling updateType', async () => {
     renderSettings()
-    const typeRow = screen.getByText('בת מצווה').closest('div[class*="rounded-xl"]')
-    const allBtnsInRow = Array.from(typeRow.querySelectorAll('button'))
-    const editButton = allBtnsInRow[2]
+    const editButton = screen.getAllByRole('button', { name: 'ערוך' })[0]
     fireEvent.click(editButton)
 
     // Input should appear
@@ -160,10 +149,7 @@ describe('Settings - TypesTab', () => {
 
   it('delete button opens ConfirmDialog; confirming calls deleteType; canceling closes dialog', async () => {
     renderSettings()
-    const typeRow = screen.getByText('בת מצווה').closest('div[class*="rounded-xl"]')
-    const allBtnsInRow = Array.from(typeRow.querySelectorAll('button'))
-    // buttons: ChevronUp, ChevronDown, Edit2, Trash2
-    const deleteButton = allBtnsInRow[3]
+    const deleteButton = screen.getAllByRole('button', { name: 'מחק' })[0]
     fireEvent.click(deleteButton)
 
     // Dialog should open
@@ -183,20 +169,17 @@ describe('Settings - TypesTab', () => {
 
   it('up/down arrow buttons call updateType with swapped order values; up disabled on first item; down disabled on last item', async () => {
     renderSettings()
-    // Get all type rows
-    const type1Row = screen.getByText('בת מצווה').closest('div[class*="rounded-xl"]')
-    const type2Row = screen.getByText('בר מצווה').closest('div[class*="rounded-xl"]')
 
-    const type1Btns = Array.from(type1Row.querySelectorAll('button'))
-    const type2Btns = Array.from(type2Row.querySelectorAll('button'))
+    const upButtons = screen.getAllByRole('button', { name: 'הזז למעלה' })
+    const downButtons = screen.getAllByRole('button', { name: 'הזז למטה' })
 
     // ChevronUp on first item should be disabled
-    expect(type1Btns[0]).toBeDisabled()
+    expect(upButtons[0]).toBeDisabled()
     // ChevronDown on last item should be disabled
-    expect(type2Btns[1]).toBeDisabled()
+    expect(downButtons[downButtons.length - 1]).toBeDisabled()
 
     // Click down arrow on first item (move t1 down)
-    fireEvent.click(type1Btns[1])
+    fireEvent.click(downButtons[0])
     await waitFor(() => {
       expect(mockUpdateType).toHaveBeenCalledWith('t1', { order: 1 })
       expect(mockUpdateType).toHaveBeenCalledWith('t2', { order: 0 })
@@ -320,9 +303,7 @@ describe('Settings - PackagesTab', () => {
 
     await waitFor(() => expect(screen.getByText('קלאסיק')).toBeInTheDocument())
 
-    const pkgRow = screen.getByText('קלאסיק').closest('div[class*="rounded-xl"]')
-    const buttons = Array.from(pkgRow.querySelectorAll('button'))
-    const deleteBtn = buttons[buttons.length - 1]
+    const deleteBtn = screen.getByRole('button', { name: 'מחק' })
     fireEvent.click(deleteBtn)
 
     expect(screen.getByRole('dialog')).toBeInTheDocument()
@@ -330,6 +311,7 @@ describe('Settings - PackagesTab', () => {
 
     fireEvent.click(screen.getByText('מחק'))
     await waitFor(() => expect(mockDeletePackage).toHaveBeenCalledWith('p1'))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
   it('PkgFields album toggle: clicking toggles includesAlbum; album fields appear when true, hidden when false', async () => {

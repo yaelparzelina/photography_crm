@@ -50,10 +50,10 @@ function TypesTab() {
         {types.map((t, i) => (
           <div key={t.id} className="bg-white border border-gray-100 rounded-xl px-4 py-3 flex items-center gap-3">
             <div className="flex flex-col gap-0.5">
-              <button onClick={() => move(i, -1)} disabled={i === 0} className="text-gray-300 hover:text-gray-600 disabled:opacity-0">
+              <button aria-label="הזז למעלה" onClick={() => move(i, -1)} disabled={i === 0} className="text-gray-300 hover:text-gray-600 disabled:opacity-0">
                 <ChevronUp className="w-3.5 h-3.5" />
               </button>
-              <button onClick={() => move(i, 1)} disabled={i === types.length - 1} className="text-gray-300 hover:text-gray-600 disabled:opacity-0">
+              <button aria-label="הזז למטה" onClick={() => move(i, 1)} disabled={i === types.length - 1} className="text-gray-300 hover:text-gray-600 disabled:opacity-0">
                 <ChevronDown className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -66,10 +66,10 @@ function TypesTab() {
             ) : (
               <>
                 <span className="flex-1 text-sm text-gray-800">{t.name}</span>
-                <button onClick={() => { setEditId(t.id); setEditName(t.name) }} className="text-gray-400 hover:text-gray-700">
+                <button aria-label="ערוך" onClick={() => { setEditId(t.id); setEditName(t.name) }} className="text-gray-400 hover:text-gray-700">
                   <Edit2 className="w-4 h-4" />
                 </button>
-                <button onClick={() => setDeleteTarget(t)} className="text-gray-400 hover:text-red-600">
+                <button aria-label="מחק" onClick={() => setDeleteTarget(t)} className="text-gray-400 hover:text-red-600">
                   <Trash2 className="w-4 h-4" />
                 </button>
               </>
@@ -140,6 +140,7 @@ function PackagesTab() {
   function setN(field, value) { setNewPkg((d) => ({ ...d, [field]: value })) }
 
   async function handleCreate() {
+    if (!newPkg.name.trim()) return
     await createPackage({
       photoshootTypeId: selectedTypeId,
       name: newPkg.name,
@@ -198,8 +199,8 @@ function PackagesTab() {
                       </p>
                     </div>
                     <div className="flex gap-2">
-                      <button onClick={() => { setEditId(p.id); setEditData({ ...p }) }} className="text-gray-400 hover:text-gray-700"><Edit2 className="w-4 h-4" /></button>
-                      <button onClick={() => setDeleteTarget(p)} className="text-gray-400 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
+                      <button aria-label="ערוך" onClick={() => { setEditId(p.id); setEditData({ ...p }) }} className="text-gray-400 hover:text-gray-700"><Edit2 className="w-4 h-4" /></button>
+                      <button aria-label="מחק" onClick={() => setDeleteTarget(p)} className="text-gray-400 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
                     </div>
                   </div>
                 )}
