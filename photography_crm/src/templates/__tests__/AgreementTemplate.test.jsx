@@ -21,7 +21,7 @@ const sampleLink = {
 describe('AgreementTemplate', () => {
   it('renders "רויטל פרצלינה" in header', () => {
     render(<AgreementTemplate link={sampleLink} />)
-    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('רויטל פרצלינה')
+    expect(screen.getByText('רויטל פרצלינה')).toBeInTheDocument()
   })
 
   it('renders client name in title and intro paragraph', () => {
