@@ -10,8 +10,7 @@ export default function AgreementTemplate({ link }) {
     <div className="p-8 font-sans leading-relaxed" dir="rtl">
       {/* Header */}
       <div className="text-center mb-6">
-        <h1 className="text-3xl font-light text-gray-900 tracking-wide mb-0.5">רויטל פרצלינה</h1>
-        <p className="text-xs tracking-widest text-gray-400 uppercase mb-4">Photography</p>
+        <img src="/logo-dark.png" alt="Revital Parzelina Photography" className="h-24 mx-auto" />
       </div>
 
       {/* Document title */}
