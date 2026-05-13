@@ -299,6 +299,7 @@ export default function ClientTicket() {
         message="ביצעת שינויים שלא נשמרו. האם אתה בטוח שברצונך לצאת?"
         confirmLabel="צא ללא שמירה"
         destructive
+        extraAction={{ label: 'שמור וצא', onClick: async () => { setShowLeaveWarning(false); await handleSave(); navigate('/dashboard') } }}
         onConfirm={() => navigate('/dashboard')}
         onCancel={() => setShowLeaveWarning(false)}
       />
