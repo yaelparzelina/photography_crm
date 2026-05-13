@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, where, orderBy } from 'firebase/firestore'
-import { useCollectionData } from 'react-firebase-hooks/firestore'
+import { useCollection } from 'react-firebase-hooks/firestore'
 import { db } from '../firebase'
 
 export function usePackagesByType(typeId) {
@@ -10,7 +10,8 @@ export function usePackagesByType(typeId) {
       : null,
     [typeId]
   )
-  const [packages, loading] = useCollectionData(q, { idField: 'id' })
+  const [snapshot, loading] = useCollection(q)
+  const packages = snapshot?.docs.map((d) => ({ id: d.id, ...d.data() })) ?? []
 
   async function createPackage(data) {
     const order = (packages ?? []).length

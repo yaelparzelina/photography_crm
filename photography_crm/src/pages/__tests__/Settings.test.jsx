@@ -30,7 +30,7 @@ vi.mock('firebase/firestore', () => ({
 }))
 
 vi.mock('react-firebase-hooks/firestore', () => ({
-  useCollectionData: vi.fn(() => [[], false]),
+  useCollection: vi.fn(() => [undefined, false]),
 }))
 
 // vi.hoisted pattern for mocks

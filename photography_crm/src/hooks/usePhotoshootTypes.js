@@ -1,12 +1,13 @@
 import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, orderBy, where, getDocs, writeBatch } from 'firebase/firestore'
-import { useCollectionData } from 'react-firebase-hooks/firestore'
+import { useCollection } from 'react-firebase-hooks/firestore'
 import { db } from '../firebase'
 
 const ref = collection(db, 'photoshootTypes')
 const q = query(ref, orderBy('order', 'asc'))
 
 export function usePhotoshootTypes() {
-  const [types, loading] = useCollectionData(q, { idField: 'id' })
+  const [snapshot, loading] = useCollection(q)
+  const types = snapshot?.docs.map((d) => ({ id: d.id, ...d.data() })) ?? []
 
   async function createType(name) {
     const order = (types ?? []).length

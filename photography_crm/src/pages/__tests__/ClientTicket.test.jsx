@@ -173,8 +173,8 @@ describe('ClientTicket', () => {
     fireEvent.change(typeSelect, { target: { value: 'type2' } })
     // After changing type, packageId should be cleared → package select shows empty option
     const selects = screen.getAllByRole('combobox')
-    // selects[0] = type, selects[1] = package, selects[2] = status
-    const packageSelectEl = selects[1]
+    // selects[0] = status (top section), selects[1] = type, selects[2] = package
+    const packageSelectEl = selects[2]
     expect(packageSelectEl.value).toBe('')
   })
 
