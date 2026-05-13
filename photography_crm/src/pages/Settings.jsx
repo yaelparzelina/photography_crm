@@ -1,17 +1,45 @@
 import { useState } from 'react'
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore'
+import { db } from '../firebase'
 import { usePhotoshootTypes } from '../hooks/usePhotoshootTypes'
 import { usePackagesByType } from '../hooks/usePackages'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
 import { Plus, Edit2, Trash2, Check, X, ChevronUp, ChevronDown } from 'lucide-react'
 
+const DEFAULT_TYPES = ['בת מצווה', 'בר מצווה', 'תדמית', 'גיל שנה', 'משפחה', 'עלייה לתורה', 'ניו בורן', 'בוק שחקן']
+const DEFAULT_PACKAGES = [
+  { name: 'קלאסית', order: 0, photoCount: 30, locationCount: 1, price: 1500, includesAlbum: false },
+  { name: 'מורחבת', order: 1, photoCount: 50, locationCount: 2, price: 2500, includesAlbum: false },
+  { name: 'פרימיום', order: 2, photoCount: 80, locationCount: 3, price: 3500, includesAlbum: true, albumSize: '30x30', albumPages: 20 },
+]
+
+async function seedDefaultData() {
+  for (let i = 0; i < DEFAULT_TYPES.length; i++) {
+    const typeRef = await addDoc(collection(db, 'photoshootTypes'), {
+      name: DEFAULT_TYPES[i], order: i, createdAt: serverTimestamp(),
+    })
+    for (const pkg of DEFAULT_PACKAGES) {
+      await addDoc(collection(db, 'packages'), {
+        ...pkg, photoshootTypeId: typeRef.id, createdAt: serverTimestamp(),
+      })
+    }
+  }
+}
+
 const inputClass = 'border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300 w-full bg-white'
 
 function TypesTab() {
-  const { types, createType, updateType, deleteType } = usePhotoshootTypes()
+  const { types, loading, createType, updateType, deleteType } = usePhotoshootTypes()
   const [newName, setNewName] = useState('')
   const [editId, setEditId] = useState(null)
   const [editName, setEditName] = useState('')
   const [deleteTarget, setDeleteTarget] = useState(null)
+  const [seeding, setSeeding] = useState(false)
+
+  async function handleSeed() {
+    setSeeding(true)
+    try { await seedDefaultData() } finally { setSeeding(false) }
+  }
 
   async function handleAdd(e) {
     e.preventDefault()
@@ -39,6 +67,15 @@ function TypesTab() {
 
   return (
     <div>
+      {!loading && types.length === 0 && (
+        <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between">
+          <p className="text-sm text-amber-800">לא קיימים סוגי צילום. האם לאתחל נתוני ברירת מחדל?</p>
+          <button onClick={handleSeed} disabled={seeding}
+            className="text-sm bg-amber-700 text-white px-4 py-1.5 rounded-lg hover:bg-amber-800 disabled:opacity-50 whitespace-nowrap me-2">
+            {seeding ? 'מאתחל...' : 'אתחל נתונים'}
+          </button>
+        </div>
+      )}
       <form onSubmit={handleAdd} className="flex gap-2 mb-6">
         <input className={inputClass} value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="שם סוג צילום חדש" />
         <button type="submit" className="flex items-center gap-1.5 bg-gray-900 text-white text-sm px-4 py-2 rounded-lg hover:bg-gray-700 whitespace-nowrap">
