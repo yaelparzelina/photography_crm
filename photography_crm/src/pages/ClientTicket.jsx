@@ -29,6 +29,8 @@ export default function ClientTicket() {
   const [saved, setSaved] = useState(false)
   const [phoneError, setPhoneError] = useState('')
   const [emailError, setEmailError] = useState('')
+  const [dirty, setDirty] = useState(false)
+  const [showLeaveWarning, setShowLeaveWarning] = useState(false)
   const [showDelete, setShowDelete] = useState(false)
   const [showAgreementEditor, setShowAgreementEditor] = useState(false)
   const [proposalLinkId, setProposalLinkId] = useState(null)
@@ -54,8 +56,13 @@ export default function ClientTicket() {
 
   function set(field, value) {
     setForm((f) => ({ ...f, [field]: value }))
+    setDirty(true)
     if (field === 'phone') setPhoneError('')
     if (field === 'email') setEmailError('')
+  }
+
+  function handleNavigateBack() {
+    if (dirty) { setShowLeaveWarning(true) } else { navigate('/dashboard') }
   }
 
   function validatePhone(phone) {
@@ -82,6 +89,7 @@ export default function ClientTicket() {
         dateOfBirth: form.dateOfBirth || null,
       })
       setSaved(true)
+      setDirty(false)
       setTimeout(() => setSaved(false), 2000)
     } finally {
       setSaving(false)
@@ -119,7 +127,7 @@ export default function ClientTicket() {
 
   return (
     <div className="max-w-3xl">
-      <button onClick={() => navigate('/dashboard')}
+      <button onClick={handleNavigateBack}
         className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-900 mb-6 transition-colors">
         <ArrowRight className="w-4 h-4" /> חזרה לרשימה
       </button>
@@ -274,7 +282,7 @@ export default function ClientTicket() {
             className="flex items-center gap-1.5 text-sm text-red-500 hover:text-red-700 border border-red-200 rounded-lg px-4 py-2 transition-colors">
             <Trash2 className="w-4 h-4" /> מחק לקוח
           </button>
-          <button onClick={() => navigate('/dashboard')}
+          <button onClick={handleNavigateBack}
             className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 border border-gray-200 rounded-lg px-4 py-2 transition-colors">
             <ArrowRight className="w-4 h-4" /> חזרה לרשימה
           </button>
@@ -284,6 +292,16 @@ export default function ClientTicket() {
           {saved ? '✓ נשמר' : saving ? 'שומר...' : 'שמור שינויים'}
         </button>
       </div>
+
+      <ConfirmDialog
+        isOpen={showLeaveWarning}
+        title="יציאה ללא שמירה"
+        message="ביצעת שינויים שלא נשמרו. האם אתה בטוח שברצונך לצאת?"
+        confirmLabel="צא ללא שמירה"
+        destructive
+        onConfirm={() => navigate('/dashboard')}
+        onCancel={() => setShowLeaveWarning(false)}
+      />
 
       <ConfirmDialog
         isOpen={showDelete}
