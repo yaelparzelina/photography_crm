@@ -1,9 +1,8 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Search, ChevronUp, ChevronDown } from 'lucide-react'
+import { Plus, Search, ChevronUp, ChevronDown, X } from 'lucide-react'
 import { useClients } from '../hooks/useClients'
 import { usePhotoshootTypes } from '../hooks/usePhotoshootTypes'
-import StatusBadge from '../components/ui/StatusBadge'
 import NewClientModal from '../components/NewClientModal'
 import { formatDate } from '../utils/dateUtils'
 import { STATUS_OPTIONS } from '../utils/statusConfig'
@@ -17,7 +16,7 @@ const thClass = 'px-4 py-3 text-xs font-medium text-gray-500 cursor-pointer hove
 
 export default function Dashboard() {
   const navigate = useNavigate()
-  const { clients, loading } = useClients()
+  const { clients, loading, updateClient } = useClients()
   const { types } = usePhotoshootTypes()
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
@@ -79,7 +78,12 @@ export default function Dashboard() {
           <input
             value={search} onChange={(e) => setSearch(e.target.value)}
             placeholder="חיפוש לפי שם, טלפון, מייל..."
-            className="w-full border border-gray-200 rounded-lg ps-10 pe-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300" />
+            className="w-full border border-gray-200 rounded-lg ps-10 pe-8 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300" />
+          {search && (
+            <button onClick={() => setSearch('')} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
           className="border border-gray-200 rounded-lg px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-300">
@@ -108,7 +112,15 @@ export default function Dashboard() {
               <tr key={c.id} onClick={() => navigate(`/dashboard/clients/${c.id}`)}
                 className="cursor-pointer hover:bg-gray-50 transition-colors">
                 <td className="px-4 py-3 font-medium text-gray-900">{c.name || '—'}</td>
-                <td className="px-4 py-3"><StatusBadge status={c.status} /></td>
+                <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                  <select
+                    value={c.status || 'new_lead'}
+                    onChange={(e) => updateClient(c.id, { status: e.target.value })}
+                    className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-gray-300 cursor-pointer"
+                  >
+                    {STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                </td>
                 <td className="px-4 py-3 text-gray-600">{typeMap[c.photoshootTypeId] || '—'}</td>
                 <td className="px-4 py-3 text-gray-600">{c.shootDate ? formatDate(c.shootDate) : '—'}</td>
                 <td className="px-4 py-3 text-center">{c.paidAdvance ? '✓' : '—'}</td>

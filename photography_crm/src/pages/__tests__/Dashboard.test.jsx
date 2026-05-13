@@ -131,14 +131,16 @@ describe('Dashboard', () => {
     expect(screen.getByText('לא נמצאו לקוחות')).toBeInTheDocument()
   })
 
-  it('renders client rows with name, status badge, and shoot date', () => {
+  it('renders client rows with name, status select, and shoot date', () => {
     renderDashboard()
     expect(screen.getByText('ישראל ישראלי')).toBeInTheDocument()
     expect(screen.getByText('שרה כהן')).toBeInTheDocument()
-    // Status badges appear in table cells - find them within the tbody
+    // Status is now an inline select — check selected values on the two status dropdowns
     const tbody = screen.getAllByRole('rowgroup')[1]
-    expect(within(tbody).getByText('ליד חדש')).toBeInTheDocument()
-    expect(within(tbody).getByText('הסתיים')).toBeInTheDocument()
+    const statusSelects = within(tbody).getAllByRole('combobox')
+    // default sort is createdAt desc: sarah (2024-02-01, done) first, israel (2024-01-01, new_lead) second
+    expect(statusSelects[0].value).toBe('done')
+    expect(statusSelects[1].value).toBe('new_lead')
     expect(screen.getByText('15/06/2024')).toBeInTheDocument()
   })
 
