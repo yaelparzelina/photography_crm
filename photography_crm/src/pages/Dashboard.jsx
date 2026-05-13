@@ -79,7 +79,7 @@ export default function Dashboard() {
           <input
             value={search} onChange={(e) => setSearch(e.target.value)}
             placeholder="חיפוש לפי שם, טלפון, מייל..."
-            className="w-full border border-gray-200 rounded-lg ps-4 pe-10 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300" />
+            className="w-full border border-gray-200 rounded-lg ps-10 pe-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300" />
         </div>
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
           className="border border-gray-200 rounded-lg px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-300">
