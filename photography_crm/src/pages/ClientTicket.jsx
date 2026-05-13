@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { doc, onSnapshot, updateDoc } from 'firebase/firestore'
 import { db } from '../firebase'
@@ -42,15 +42,46 @@ export default function ClientTicket() {
   const [activeLinkId, setActiveLinkId] = useState(null)
   const [showProposalPreview, setShowProposalPreview] = useState(false)
 
+  const initializedRef = useRef(false)
+
   const { packages } = usePackagesByType(form.photoshootTypeId)
   const { createProposalLink } = useLinks()
 
   useEffect(() => {
+    if (!dirty || !client) return
+    try {
+      localStorage.setItem(`draft_${id}`, JSON.stringify(form, (_, val) => {
+        if (val && typeof val?.toDate === 'function') return { _t: val.toDate().toISOString() }
+        if (val instanceof Date) return { _t: val.toISOString() }
+        return val
+      }))
+    } catch { /* ignore */ }
+  }, [form, dirty, id, client])
+
+  useEffect(() => {
+    initializedRef.current = false
     const unsub = onSnapshot(doc(db, 'clients', id), (snap) => {
       if (snap.exists()) {
         const data = { id: snap.id, ...snap.data() }
         setClient(data)
-        setForm(data)
+        if (!initializedRef.current) {
+          initializedRef.current = true
+          const raw = localStorage.getItem(`draft_${id}`)
+          if (raw) {
+            try {
+              const draft = JSON.parse(raw, (_, val) => {
+                if (val && typeof val === 'object' && val._t) return new Date(val._t)
+                return val
+              })
+              setForm(draft)
+              setDirty(true)
+            } catch {
+              setForm(data)
+            }
+          } else {
+            setForm(data)
+          }
+        }
       }
       setLoading(false)
     })
@@ -66,6 +97,11 @@ export default function ClientTicket() {
 
   function handleNavigateBack() {
     if (dirty) { setShowLeaveWarning(true) } else { navigate('/dashboard') }
+  }
+
+  function handleLeaveWithoutSaving() {
+    localStorage.removeItem(`draft_${id}`)
+    navigate('/dashboard')
   }
 
   function validatePhone(phone) {
@@ -91,6 +127,7 @@ export default function ClientTicket() {
         shootDate: form.shootDate || null,
         dateOfBirth: form.dateOfBirth || null,
       })
+      localStorage.removeItem(`draft_${id}`)
       setSaved(true)
       setDirty(false)
       setTimeout(() => setSaved(false), 2000)
@@ -102,6 +139,7 @@ export default function ClientTicket() {
   async function handleDelete() {
     try {
       await deleteClient(id)
+      localStorage.removeItem(`draft_${id}`)
       navigate('/dashboard')
     } catch {
       // navigation only on success
@@ -315,7 +353,7 @@ export default function ClientTicket() {
         confirmLabel="צא ללא שמירה"
         destructive
         extraAction={{ label: 'שמור וצא', onClick: async () => { setShowLeaveWarning(false); await handleSave(); navigate('/dashboard') } }}
-        onConfirm={() => navigate('/dashboard')}
+        onConfirm={handleLeaveWithoutSaving}
         onCancel={() => setShowLeaveWarning(false)}
       />
 

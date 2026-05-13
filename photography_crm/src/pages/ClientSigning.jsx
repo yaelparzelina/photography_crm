@@ -71,7 +71,7 @@ export default function ClientSigning() {
         <AgreementTemplate link={link} />
         <div className="px-8 pb-8 pt-4 border-t border-gray-100">
           <h3 className="font-semibold text-gray-900 mb-4 text-base">אישור ההסכם</h3>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} noValidate className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 כתובת המייל שלך — לאישור ההסכם ולמשלוח עדכונים

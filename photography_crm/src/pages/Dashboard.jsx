@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { Plus, Search, ChevronUp, ChevronDown, X } from 'lucide-react'
 import { useClients } from '../hooks/useClients'
@@ -9,32 +10,41 @@ import { STATUS_CONFIG, STATUS_OPTIONS } from '../utils/statusConfig'
 
 function StatusSelect({ status, onUpdate }) {
   const [open, setOpen] = useState(false)
-  const ref = useRef(null)
+  const [pos, setPos] = useState({ top: 0, right: 0 })
+  const btnRef = useRef(null)
   const config = STATUS_CONFIG[status] || STATUS_CONFIG.new_lead
 
   useEffect(() => {
     if (!open) return
     function handleOutside(e) {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
+      if (btnRef.current && !btnRef.current.contains(e.target)) setOpen(false)
     }
     document.addEventListener('mousedown', handleOutside)
     return () => document.removeEventListener('mousedown', handleOutside)
   }, [open])
 
+  function handleOpen(e) {
+    e.stopPropagation()
+    if (!open) {
+      const rect = btnRef.current.getBoundingClientRect()
+      setPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right })
+    }
+    setOpen((o) => !o)
+  }
+
   return (
-    <div ref={ref} className="relative inline-block">
-      <button
-        onClick={(e) => { e.stopPropagation(); setOpen((o) => !o) }}
+    <>
+      <button ref={btnRef} onClick={handleOpen}
         className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${config.color}`}
       >
         {config.label}
         <ChevronDown className="w-3 h-3 opacity-70" />
       </button>
-      {open && (
-        <div className="absolute z-20 top-full mt-1 start-0 bg-white border border-gray-200 rounded-xl shadow-lg py-1 min-w-max">
+      {open && createPortal(
+        <div style={{ position: 'fixed', top: pos.top, right: pos.right, zIndex: 9999 }}
+          className="bg-white border border-gray-200 rounded-xl shadow-lg py-1 min-w-max">
           {STATUS_OPTIONS.map((o) => (
-            <button
-              key={o.value}
+            <button key={o.value}
               onClick={(e) => { e.stopPropagation(); onUpdate(o.value); setOpen(false) }}
               className="flex w-full items-center px-3 py-1.5 hover:bg-gray-50"
             >
@@ -43,9 +53,10 @@ function StatusSelect({ status, onUpdate }) {
               </span>
             </button>
           ))}
-        </div>
+        </div>,
+        document.body
       )}
-    </div>
+    </>
   )
 }
 

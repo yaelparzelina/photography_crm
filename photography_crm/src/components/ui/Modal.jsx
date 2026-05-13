@@ -18,7 +18,7 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth = 'ma
         aria-labelledby={title ? 'modal-title' : undefined}
         className={`relative bg-white rounded-2xl shadow-xl w-full ${maxWidth} max-h-[90vh] overflow-y-auto`}
       >
-        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+        <div className="sticky top-0 z-10 bg-white rounded-t-2xl px-6 py-4 border-b border-gray-100 flex items-center justify-between">
           {title
             ? <h2 id="modal-title" className="text-lg font-semibold text-gray-900">{title}</h2>
             : <span />
