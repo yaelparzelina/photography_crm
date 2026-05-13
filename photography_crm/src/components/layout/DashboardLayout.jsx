@@ -24,10 +24,10 @@ export default function DashboardLayout() {
   return (
     <div className="min-h-screen bg-gray-50">
       <nav className="bg-white border-b border-gray-100 px-6 py-3.5 flex items-center justify-between sticky top-0 z-30">
-        <div className="flex items-center gap-2">
+        <NavLink to="/dashboard" end className="flex items-center gap-2 hover:opacity-75 transition-opacity">
           <Camera className="w-5 h-5 text-gray-700" />
           <span className="font-semibold text-gray-900">Photography CRM</span>
-        </div>
+        </NavLink>
         <div className="flex items-center gap-5">
           <NavLink to="/dashboard" end className={navLinkClass}>
             <Users className="w-4 h-4" /> לקוחות
