@@ -1,17 +1,16 @@
 import { useMemo } from 'react'
-import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, where, orderBy } from 'firebase/firestore'
+import { collection, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, where } from 'firebase/firestore'
 import { useCollection } from 'react-firebase-hooks/firestore'
 import { db } from '../firebase'
 
 export function usePackagesByType(typeId) {
   const q = useMemo(
-    () => typeId
-      ? query(collection(db, 'packages'), where('photoshootTypeId', '==', typeId), orderBy('order', 'asc'))
-      : null,
+    () => typeId ? query(collection(db, 'packages'), where('photoshootTypeId', '==', typeId)) : null,
     [typeId]
   )
   const [snapshot, loading] = useCollection(q)
-  const packages = snapshot?.docs.map((d) => ({ id: d.id, ...d.data() })) ?? []
+  const packages = (snapshot?.docs.map((d) => ({ id: d.id, ...d.data() })) ?? [])
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
 
   async function createPackage(data) {
     const order = (packages ?? []).length
