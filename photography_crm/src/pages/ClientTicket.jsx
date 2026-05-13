@@ -27,6 +27,8 @@ export default function ClientTicket() {
   const [form, setForm] = useState({})
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [phoneError, setPhoneError] = useState('')
+  const [emailError, setEmailError] = useState('')
   const [showDelete, setShowDelete] = useState(false)
   const [showAgreementEditor, setShowAgreementEditor] = useState(false)
   const [proposalLinkId, setProposalLinkId] = useState(null)
@@ -52,9 +54,25 @@ export default function ClientTicket() {
 
   function set(field, value) {
     setForm((f) => ({ ...f, [field]: value }))
+    if (field === 'phone') setPhoneError('')
+    if (field === 'email') setEmailError('')
+  }
+
+  function validatePhone(phone) {
+    if (!phone) return true
+    return /^0\d{8,9}$/.test(phone.replace(/[-\s]/g, ''))
+  }
+
+  function validateEmail(email) {
+    if (!email) return true
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
   }
 
   async function handleSave() {
+    let valid = true
+    if (!validatePhone(form.phone)) { setPhoneError('מספר טלפון לא תקין'); valid = false }
+    if (!validateEmail(form.email)) { setEmailError('כתובת מייל לא תקינה'); valid = false }
+    if (!valid) return
     setSaving(true)
     try {
       const { id: _id, createdAt, agreementSigned, agreementSignedAt, ...rest } = form
@@ -111,6 +129,14 @@ export default function ClientTicket() {
         <StatusBadge status={form.status} />
       </div>
 
+      {/* Section: Status */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-4">
+        <h2 className="text-base font-semibold text-gray-800 mb-4">סטטוס</h2>
+        <select className={inputClass} value={form.status || 'new_lead'} onChange={(e) => set('status', e.target.value)}>
+          {STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
+      </div>
+
       {/* Section: Client Details */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-4">
         <h2 className="text-base font-semibold text-gray-800 mb-4">פרטי לקוח</h2>
@@ -121,11 +147,13 @@ export default function ClientTicket() {
           </div>
           <div>
             <label className={labelClass}>טלפון</label>
-            <input className={inputClass} value={form.phone || ''} onChange={(e) => set('phone', e.target.value)} />
+            <input className={`${inputClass} ${phoneError ? 'border-red-400' : ''}`} value={form.phone || ''} placeholder="05X-XXXXXXX" onChange={(e) => set('phone', e.target.value)} />
+            {phoneError && <p className="text-red-600 text-xs mt-1">{phoneError}</p>}
           </div>
           <div>
             <label className={labelClass}>אימייל</label>
-            <input type="email" className={inputClass} value={form.email || ''} onChange={(e) => set('email', e.target.value)} />
+            <input type="email" className={`${inputClass} ${emailError ? 'border-red-400' : ''}`} value={form.email || ''} onChange={(e) => set('email', e.target.value)} />
+            {emailError && <p className="text-red-600 text-xs mt-1">{emailError}</p>}
           </div>
           <div>
             <label className={labelClass}>תאריך לידה</label>
@@ -170,8 +198,9 @@ export default function ClientTicket() {
           <div className="flex items-center gap-3 pt-2">
             <label className="text-sm font-medium text-gray-700">שילם מקדמה</label>
             <button type="button" onClick={() => set('paidAdvance', !form.paidAdvance)}
-              className={`w-10 h-6 rounded-full transition-colors ${form.paidAdvance ? 'bg-green-500' : 'bg-gray-200'}`}>
-              <span className={`block w-4 h-4 bg-white rounded-full shadow transition-transform mx-1 ${form.paidAdvance ? '-translate-x-4 rtl:translate-x-4' : ''}`} />
+              aria-label="שילם מקדמה"
+              className={`relative w-10 h-6 rounded-full transition-colors ${form.paidAdvance ? 'bg-green-500' : 'bg-gray-200'}`}>
+              <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all duration-200 ${form.paidAdvance ? 'right-5' : 'right-1'}`} />
             </button>
           </div>
         </div>
@@ -180,14 +209,6 @@ export default function ClientTicket() {
           <textarea rows={3} className={inputClass} value={form.notes || ''}
             onChange={(e) => set('notes', e.target.value)} />
         </div>
-      </div>
-
-      {/* Section: Status */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-4">
-        <h2 className="text-base font-semibold text-gray-800 mb-4">סטטוס</h2>
-        <select className={inputClass} value={form.status || 'new_lead'} onChange={(e) => set('status', e.target.value)}>
-          {STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </select>
       </div>
 
       {/* Section: Documents */}
@@ -246,12 +267,18 @@ export default function ClientTicket() {
         </div>
       </div>
 
-      {/* Save + Delete */}
+      {/* Save + Delete + Back */}
       <div className="flex items-center justify-between mt-4">
-        <button onClick={() => setShowDelete(true)}
-          className="flex items-center gap-1.5 text-sm text-red-500 hover:text-red-700 border border-red-200 rounded-lg px-4 py-2 transition-colors">
-          <Trash2 className="w-4 h-4" /> מחק לקוח
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setShowDelete(true)}
+            className="flex items-center gap-1.5 text-sm text-red-500 hover:text-red-700 border border-red-200 rounded-lg px-4 py-2 transition-colors">
+            <Trash2 className="w-4 h-4" /> מחק לקוח
+          </button>
+          <button onClick={() => navigate('/dashboard')}
+            className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 border border-gray-200 rounded-lg px-4 py-2 transition-colors">
+            <ArrowRight className="w-4 h-4" /> חזרה לרשימה
+          </button>
+        </div>
         <button onClick={handleSave} disabled={saving}
           className="bg-gray-900 text-white text-sm px-6 py-2.5 rounded-lg hover:bg-gray-700 disabled:opacity-50 transition-colors">
           {saved ? '✓ נשמר' : saving ? 'שומר...' : 'שמור שינויים'}
