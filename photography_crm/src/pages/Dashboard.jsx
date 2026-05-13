@@ -1,11 +1,53 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Plus, Search, ChevronUp, ChevronDown, X } from 'lucide-react'
 import { useClients } from '../hooks/useClients'
 import { usePhotoshootTypes } from '../hooks/usePhotoshootTypes'
 import NewClientModal from '../components/NewClientModal'
 import { formatDate } from '../utils/dateUtils'
-import { STATUS_OPTIONS } from '../utils/statusConfig'
+import { STATUS_CONFIG, STATUS_OPTIONS } from '../utils/statusConfig'
+
+function StatusSelect({ status, onUpdate }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+  const config = STATUS_CONFIG[status] || STATUS_CONFIG.new_lead
+
+  useEffect(() => {
+    if (!open) return
+    function handleOutside(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handleOutside)
+    return () => document.removeEventListener('mousedown', handleOutside)
+  }, [open])
+
+  return (
+    <div ref={ref} className="relative inline-block">
+      <button
+        onClick={(e) => { e.stopPropagation(); setOpen((o) => !o) }}
+        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${config.color}`}
+      >
+        {config.label}
+        <ChevronDown className="w-3 h-3 opacity-70" />
+      </button>
+      {open && (
+        <div className="absolute z-20 top-full mt-1 start-0 bg-white border border-gray-200 rounded-xl shadow-lg py-1 min-w-max">
+          {STATUS_OPTIONS.map((o) => (
+            <button
+              key={o.value}
+              onClick={(e) => { e.stopPropagation(); onUpdate(o.value); setOpen(false) }}
+              className="flex w-full items-center px-3 py-1.5 hover:bg-gray-50"
+            >
+              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_CONFIG[o.value].color}`}>
+                {o.label}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 function SortIcon({ field, sortField, sortDir }) {
   if (sortField !== field) return null
@@ -113,13 +155,7 @@ export default function Dashboard() {
                 className="cursor-pointer hover:bg-gray-50 transition-colors">
                 <td className="px-4 py-3 font-medium text-gray-900">{c.name || '—'}</td>
                 <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                  <select
-                    value={c.status || 'new_lead'}
-                    onChange={(e) => updateClient(c.id, { status: e.target.value })}
-                    className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-gray-300 cursor-pointer"
-                  >
-                    {STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                  </select>
+                  <StatusSelect status={c.status} onUpdate={(val) => updateClient(c.id, { status: val })} />
                 </td>
                 <td className="px-4 py-3 text-gray-600">{typeMap[c.photoshootTypeId] || '—'}</td>
                 <td className="px-4 py-3 text-gray-600">{c.shootDate ? formatDate(c.shootDate) : '—'}</td>

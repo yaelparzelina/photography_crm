@@ -57,7 +57,7 @@ const defaultClient = {
   email: 'israel@example.com',
   photoshootTypeId: 'type1',
   packageId: 'pkg1',
-  shootDate: null,
+  shootDate: new Date('2024-06-15'),
   price: 3000,
   agreementSigned: false,
 }
@@ -139,6 +139,13 @@ describe('AgreementEditorModal', () => {
       )
       expect(onLinkCreated).toHaveBeenCalledWith('agreement-link-456')
     })
+  })
+
+  it('shows shoot date error and blocks generation when shoot date is empty', async () => {
+    renderModal({ client: { ...defaultClient, shootDate: null } })
+    fireEvent.click(screen.getByText('צור קישור'))
+    expect(screen.getByText('נדרש תאריך צילום ליצירת ההסכם')).toBeInTheDocument()
+    expect(mockCreateAgreementLink).not.toHaveBeenCalled()
   })
 
   it('after generation, shows success state with link URL', async () => {

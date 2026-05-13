@@ -135,12 +135,12 @@ describe('Dashboard', () => {
     renderDashboard()
     expect(screen.getByText('ישראל ישראלי')).toBeInTheDocument()
     expect(screen.getByText('שרה כהן')).toBeInTheDocument()
-    // Status is now an inline select — check selected values on the two status dropdowns
+    // Status is now a colorful badge button — default sort is createdAt desc
+    // sarah (2024-02-01, done) first → 'הסתיים', israel (2024-01-01, new_lead) second → 'ליד חדש'
     const tbody = screen.getAllByRole('rowgroup')[1]
-    const statusSelects = within(tbody).getAllByRole('combobox')
-    // default sort is createdAt desc: sarah (2024-02-01, done) first, israel (2024-01-01, new_lead) second
-    expect(statusSelects[0].value).toBe('done')
-    expect(statusSelects[1].value).toBe('new_lead')
+    const rows = within(tbody).getAllByRole('row')
+    expect(within(rows[0]).getByText('הסתיים')).toBeInTheDocument()
+    expect(within(rows[1]).getByText('ליד חדש')).toBeInTheDocument()
     expect(screen.getByText('15/06/2024')).toBeInTheDocument()
   })
 

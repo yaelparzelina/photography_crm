@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
-import { doc, getDoc, collection, query, where, orderBy, getDocs } from 'firebase/firestore'
+import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore'
 import { db } from '../firebase'
 import ProposalTemplate from '../templates/ProposalTemplate'
 import PublicLayout from '../components/layout/PublicLayout'
@@ -22,9 +22,11 @@ export default function ClientProposal() {
       const typeName = typeSnap.exists() ? typeSnap.data().name : ''
 
       const pkgSnap = await getDocs(
-        query(collection(db, 'packages'), where('photoshootTypeId', '==', linkData.photoshootTypeId), orderBy('order', 'asc'))
+        query(collection(db, 'packages'), where('photoshootTypeId', '==', linkData.photoshootTypeId))
       )
-      const packages = pkgSnap.docs.map((d) => ({ id: d.id, ...d.data() }))
+      const packages = pkgSnap.docs
+        .map((d) => ({ id: d.id, ...d.data() }))
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
 
       setState({ loading: false, link: linkData, typeName, packages })
     }

@@ -5,7 +5,7 @@ export default function ProposalTemplate({ photoshootTypeName, packages }) {
   return (
     <div className="p-8 font-sans" dir="rtl">
       <div className="text-center mb-10">
-        <img src="/logo.png" alt="Revital Parzelina Photography" className="h-24 mx-auto mb-2" />
+        <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Revital Parzelina Photography" className="h-24 mx-auto mb-2" />
         <div className="w-12 h-px bg-gray-300 mx-auto my-4" />
         <p className="text-sm text-gray-500">הצעת מחיר</p>
         <p className="text-xs text-gray-400 mt-1">{today}</p>

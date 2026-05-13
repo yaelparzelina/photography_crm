@@ -9,6 +9,8 @@ import { useLinks } from '../hooks/useLinks'
 import StatusBadge from '../components/ui/StatusBadge'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
 import AgreementEditorModal from '../components/AgreementEditorModal'
+import Modal from '../components/ui/Modal'
+import ProposalTemplate from '../templates/ProposalTemplate'
 import { STATUS_OPTIONS } from '../utils/statusConfig'
 import { formatDate, toInputDate, fromInputDate } from '../utils/dateUtils'
 import { ArrowRight, Copy, Check, Trash2 } from 'lucide-react'
@@ -38,6 +40,7 @@ export default function ClientTicket() {
   const [copiedAgreement, setCopiedAgreement] = useState(false)
   const [generatingProposal, setGeneratingProposal] = useState(false)
   const [activeLinkId, setActiveLinkId] = useState(null)
+  const [showProposalPreview, setShowProposalPreview] = useState(false)
 
   const { packages } = usePackagesByType(form.photoshootTypeId)
   const { createProposalLink } = useLinks()
@@ -230,16 +233,28 @@ export default function ClientTicket() {
               <div className="space-y-2">
                 <input readOnly value={proposalUrl(proposalLinkId)}
                   className="w-full text-xs border border-gray-200 rounded-lg ps-3 pe-3 py-2 bg-gray-50 text-gray-600" />
-                <button onClick={() => { navigator.clipboard.writeText(proposalUrl(proposalLinkId)); setCopiedProposal(true); setTimeout(() => setCopiedProposal(false), 2000) }}
-                  className="flex items-center gap-1 text-xs text-gray-600 hover:text-gray-900">
-                  {copiedProposal ? <><Check className="w-3 h-3 text-green-600" /> הועתק!</> : <><Copy className="w-3 h-3" /> העתק קישור</>}
-                </button>
+                <div className="flex gap-2">
+                  <button onClick={() => { navigator.clipboard.writeText(proposalUrl(proposalLinkId)); setCopiedProposal(true); setTimeout(() => setCopiedProposal(false), 2000) }}
+                    className="flex items-center gap-1 text-xs text-gray-600 hover:text-gray-900">
+                    {copiedProposal ? <><Check className="w-3 h-3 text-green-600" /> הועתק!</> : <><Copy className="w-3 h-3" /> העתק קישור</>}
+                  </button>
+                  <button onClick={() => setShowProposalPreview(true)}
+                    className="text-xs text-gray-500 hover:text-gray-800 underline underline-offset-2">
+                    תצוגה מקדימה
+                  </button>
+                </div>
               </div>
             ) : (
-              <button onClick={handleGenerateProposal} disabled={!form.photoshootTypeId || generatingProposal}
-                className="text-sm bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-700 disabled:opacity-40 transition-colors">
-                צור קישור
-              </button>
+              <div className="flex gap-2 flex-wrap">
+                <button onClick={handleGenerateProposal} disabled={!form.photoshootTypeId || generatingProposal}
+                  className="text-sm bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-700 disabled:opacity-40 transition-colors">
+                  צור קישור
+                </button>
+                <button onClick={() => setShowProposalPreview(true)} disabled={!form.photoshootTypeId}
+                  className="text-sm border border-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 disabled:opacity-40 transition-colors">
+                  תצוגה מקדימה
+                </button>
+              </div>
             )}
           </div>
           {/* Agreement */}
@@ -317,11 +332,19 @@ export default function ClientTicket() {
       <AgreementEditorModal
         isOpen={showAgreementEditor}
         onClose={() => setShowAgreementEditor(false)}
-        client={client}
+        client={{ ...client, ...form }}
         packages={packages}
         types={types}
         onLinkCreated={(linkId) => { setActiveLinkId(linkId); setShowAgreementEditor(false) }}
       />
+
+      <Modal isOpen={showProposalPreview} onClose={() => setShowProposalPreview(false)}
+        title="תצוגה מקדימה — הצעת מחיר" maxWidth="max-w-2xl">
+        <ProposalTemplate
+          photoshootTypeName={types.find((t) => t.id === form.photoshootTypeId)?.name || ''}
+          packages={packages}
+        />
+      </Modal>
     </div>
   )
 }

@@ -10,7 +10,7 @@ export default function AgreementTemplate({ link }) {
     <div className="p-8 font-sans leading-relaxed" dir="rtl">
       {/* Header */}
       <div className="text-center mb-6">
-        <img src="/logo.png" alt="Revital Parzelina Photography" className="h-24 mx-auto" />
+        <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Revital Parzelina Photography" className="h-24 mx-auto" />
       </div>
 
       {/* Document title */}

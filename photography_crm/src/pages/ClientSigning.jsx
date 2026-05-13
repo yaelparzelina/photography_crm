@@ -23,6 +23,10 @@ export default function ClientSigning() {
 
   async function handleSubmit(e) {
     e.preventDefault()
+    if (!email.trim()) {
+      setEmailError('נדרש אימייל לאישור ההסכם')
+      return
+    }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setEmailError('כתובת מייל לא תקינה')
       return
@@ -75,8 +79,7 @@ export default function ClientSigning() {
               <input type="email" value={email}
                 onChange={(e) => { setEmail(e.target.value); setEmailError('') }}
                 placeholder="your@email.com"
-                className="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300"
-                required />
+                className={`w-full border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300 ${emailError ? 'border-red-400' : 'border-gray-200'}`} />
               {emailError && <p className="text-red-600 text-xs mt-1">{emailError}</p>}
             </div>
             <button type="submit" disabled={submitting}
