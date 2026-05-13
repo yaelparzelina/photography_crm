@@ -61,7 +61,7 @@ export default function NewClientModal({ isOpen, onClose }) {
             {types.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
           </select>
         </div>
-        <div className="flex justify-start gap-3 pt-2">
+        <div className="flex justify-end gap-3 pt-2">
           <button type="button" onClick={onClose}
             className="px-4 py-2 text-sm border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50">בטל</button>
           <button type="submit" disabled={saving}
