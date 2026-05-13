@@ -12,12 +12,16 @@ function StatusSelect({ status, onUpdate }) {
   const [open, setOpen] = useState(false)
   const [pos, setPos] = useState({ top: 0, right: 0 })
   const btnRef = useRef(null)
+  const dropRef = useRef(null)
   const config = STATUS_CONFIG[status] || STATUS_CONFIG.new_lead
 
   useEffect(() => {
     if (!open) return
     function handleOutside(e) {
-      if (btnRef.current && !btnRef.current.contains(e.target)) setOpen(false)
+      if (
+        btnRef.current && !btnRef.current.contains(e.target) &&
+        dropRef.current && !dropRef.current.contains(e.target)
+      ) setOpen(false)
     }
     document.addEventListener('mousedown', handleOutside)
     return () => document.removeEventListener('mousedown', handleOutside)
@@ -41,7 +45,7 @@ function StatusSelect({ status, onUpdate }) {
         <ChevronDown className="w-3 h-3 opacity-70" />
       </button>
       {open && createPortal(
-        <div style={{ position: 'fixed', top: pos.top, right: pos.right, zIndex: 9999 }}
+        <div ref={dropRef} style={{ position: 'fixed', top: pos.top, right: pos.right, zIndex: 9999 }}
           className="bg-white border border-gray-200 rounded-xl shadow-lg py-1 min-w-max">
           {STATUS_OPTIONS.map((o) => (
             <button key={o.value}
