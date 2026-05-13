@@ -9,14 +9,25 @@ export default function NewClientModal({ isOpen, onClose }) {
   const { createClient } = useClients()
   const { types } = usePhotoshootTypes()
   const [form, setForm] = useState({ name: '', phone: '', photoshootTypeId: '' })
+  const [phoneError, setPhoneError] = useState('')
   const [saving, setSaving] = useState(false)
 
   function set(field, value) {
     setForm((f) => ({ ...f, [field]: value }))
+    if (field === 'phone') setPhoneError('')
+  }
+
+  function validatePhone(phone) {
+    if (!phone) return true
+    return /^0\d{8,9}$/.test(phone.replace(/[-\s]/g, ''))
   }
 
   async function handleSubmit(e) {
     e.preventDefault()
+    if (!validatePhone(form.phone)) {
+      setPhoneError('מספר טלפון לא תקין')
+      return
+    }
     setSaving(true)
     try {
       const id = await createClient(form)
@@ -38,7 +49,9 @@ export default function NewClientModal({ isOpen, onClose }) {
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">טלפון</label>
           <input value={form.phone} onChange={(e) => set('phone', e.target.value)}
-            className="w-full border border-gray-200 rounded-lg ps-4 pe-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300" />
+            placeholder="05X-XXXXXXX"
+            className={`w-full border rounded-lg ps-4 pe-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300 ${phoneError ? 'border-red-400' : 'border-gray-200'}`} />
+          {phoneError && <p className="text-red-600 text-xs mt-1">{phoneError}</p>}
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">סוג צילום</label>
