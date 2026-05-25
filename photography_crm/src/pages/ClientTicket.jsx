@@ -38,7 +38,6 @@ export default function ClientTicket() {
   const [loading, setLoading] = useState(true)
   const [form, setForm] = useState({})
   const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
   const [phoneError, setPhoneError] = useState('')
   const [emailError, setEmailError] = useState('')
   const [dirty, setDirty] = useState(false)
@@ -143,9 +142,8 @@ export default function ClientTicket() {
         dateOfBirth: form.dateOfBirth || null,
       })
       localStorage.removeItem(`draft_${id}`)
-      setSaved(true)
       setDirty(false)
-      setTimeout(() => setSaved(false), 2000)
+      navigate('/dashboard')
     } finally {
       setSaving(false)
     }
@@ -363,7 +361,7 @@ export default function ClientTicket() {
         </div>
         <button onClick={handleSave} disabled={saving}
           className="bg-gray-900 text-white text-sm px-6 py-2.5 rounded-lg hover:bg-gray-700 disabled:opacity-50 transition-colors">
-          {saved ? '✓ נשמר' : saving ? 'שומר...' : 'שמור שינויים'}
+          {saving ? 'שומר...' : 'שמור שינויים'}
         </button>
       </div>
 

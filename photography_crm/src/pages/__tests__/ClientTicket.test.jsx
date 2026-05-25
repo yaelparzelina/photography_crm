@@ -188,12 +188,12 @@ describe('ClientTicket', () => {
     })
   })
 
-  it('save button shows "✓ נשמר" feedback briefly', async () => {
+  it('save button navigates to /dashboard after saving', async () => {
     setupOnSnapshot(makeSnapshot())
     renderTicket()
     fireEvent.click(screen.getByText('שמור שינויים'))
     await waitFor(() => {
-      expect(screen.getByText('✓ נשמר')).toBeInTheDocument()
+      expect(mockNavigate).toHaveBeenCalledWith('/dashboard')
     })
   })
 
