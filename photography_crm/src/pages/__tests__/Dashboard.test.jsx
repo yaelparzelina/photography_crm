@@ -71,7 +71,8 @@ const defaultTypes = [
 const defaultClients = [
   {
     id: 'client1',
-    name: 'ישראל ישראלי',
+    firstName: 'ישראל',
+    lastName: 'ישראלי',
     phone: '050-1234567',
     email: 'israel@example.com',
     status: 'new_lead',
@@ -83,7 +84,8 @@ const defaultClients = [
   },
   {
     id: 'client2',
-    name: 'שרה כהן',
+    firstName: 'שרה',
+    lastName: 'כהן',
     phone: '052-9876543',
     email: 'sarah@example.com',
     status: 'done',
@@ -144,7 +146,7 @@ describe('Dashboard', () => {
     expect(screen.getByText('15/06/2024')).toBeInTheDocument()
   })
 
-  it('filters clients by name search', () => {
+  it('filters clients by firstName search', () => {
     renderDashboard()
     const input = screen.getByPlaceholderText('חיפוש לפי שם, טלפון, מייל...')
     fireEvent.change(input, { target: { value: 'ישראל' } })
@@ -190,10 +192,10 @@ describe('Dashboard', () => {
     expect(screen.getByText('לקוח חדש', { selector: '#modal-title' })).toBeInTheDocument()
   })
 
-  it('clicking name column header sorts by name asc then desc on second click', () => {
+  it('clicking name column header sorts by firstName asc then desc on second click', () => {
     renderDashboard()
     const nameHeader = screen.getByRole('columnheader', { name: /שם/ })
-    // First click: sort by name asc — י (yod) comes before ש (shin) in Hebrew alphabet
+    // First click: sort by firstName asc — י (yod) comes before ש (shin) in Hebrew alphabet
     fireEvent.click(nameHeader)
     let rows = screen.getAllByRole('row')
     // rows[0] is header row, rows[1] and rows[2] are data rows

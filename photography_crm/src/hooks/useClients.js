@@ -11,7 +11,7 @@ export function useClients() {
 
   async function createClient(data) {
     const docRef = await addDoc(ref, {
-      name: '', email: '', phone: '', photoshootTypeId: '', packageId: '',
+      firstName: '', lastName: '', email: '', phone: '', photoshootTypeId: '', packageId: '',
       price: null, paidAdvance: false, status: 'new_lead',
       agreementSigned: false, notes: '',
       ...data,

@@ -157,11 +157,12 @@ describe('ClientTicket', () => {
     expect(screen.getByText('מסמכים')).toBeInTheDocument()
   })
 
-  it('editing name field updates form state', () => {
+  it('editing firstName field updates form state', () => {
     setupOnSnapshot(makeSnapshot())
     renderTicket()
-    const nameInput = screen.getByDisplayValue('ישראל ישראלי')
-    fireEvent.change(nameInput, { target: { value: 'שם חדש' } })
+    // legacy client has name='ישראל ישראלי' → normalized to firstName='ישראל ישראלי'
+    const firstNameInput = screen.getByDisplayValue('ישראל ישראלי')
+    fireEvent.change(firstNameInput, { target: { value: 'שם חדש' } })
     expect(screen.getByDisplayValue('שם חדש')).toBeInTheDocument()
   })
 

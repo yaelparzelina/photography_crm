@@ -12,11 +12,21 @@ import AgreementEditorModal from '../components/AgreementEditorModal'
 import Modal from '../components/ui/Modal'
 import ProposalTemplate from '../templates/ProposalTemplate'
 import { STATUS_OPTIONS } from '../utils/statusConfig'
+import { getClientName } from '../utils/clientUtils'
 import { formatDate, toInputDate, fromInputDate } from '../utils/dateUtils'
 import { ArrowRight, Copy, Check, Trash2 } from 'lucide-react'
 
 const inputClass = 'w-full border border-gray-200 rounded-lg ps-4 pe-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300 bg-white'
 const labelClass = 'block text-sm font-medium text-gray-700 mb-1'
+
+function normalizeClientData(data) {
+  const { name: legacyName, ...rest } = data
+  return {
+    ...rest,
+    firstName: data.firstName || legacyName || '',
+    lastName: data.lastName || '',
+  }
+}
 
 export default function ClientTicket() {
   const { id } = useParams()
@@ -69,17 +79,22 @@ export default function ClientTicket() {
           const raw = localStorage.getItem(`draft_${id}`)
           if (raw) {
             try {
-              const draft = JSON.parse(raw, (_, val) => {
+              const parsed = JSON.parse(raw, (_, val) => {
                 if (val && typeof val === 'object' && val._t) return new Date(val._t)
                 return val
               })
-              setForm(draft)
+              const { name: legacyName, ...draftRest } = parsed
+              setForm({
+                ...draftRest,
+                firstName: parsed.firstName || legacyName || '',
+                lastName: parsed.lastName || '',
+              })
               setDirty(true)
             } catch {
-              setForm(data)
+              setForm(normalizeClientData(data))
             }
           } else {
-            setForm(data)
+            setForm(normalizeClientData(data))
           }
         }
       }
@@ -174,7 +189,7 @@ export default function ClientTicket() {
       </button>
 
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900">{client.name || 'לקוח חדש'}</h1>
+        <h1 className="text-2xl font-semibold text-gray-900">{getClientName(client) || 'לקוח חדש'}</h1>
         <StatusBadge status={form.status} />
       </div>
 
@@ -190,9 +205,15 @@ export default function ClientTicket() {
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-4">
         <h2 className="text-base font-semibold text-gray-800 mb-4">פרטי לקוח</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className={labelClass}>שם מלא</label>
-            <input className={inputClass} value={form.name || ''} onChange={(e) => set('name', e.target.value)} />
+          <div className="sm:col-span-2 flex gap-3">
+            <div className="flex-1">
+              <label className={labelClass}>שם</label>
+              <input className={inputClass} value={form.firstName || ''} onChange={(e) => set('firstName', e.target.value)} />
+            </div>
+            <div className="flex-1">
+              <label className={labelClass}>שם משפחה</label>
+              <input className={inputClass} value={form.lastName || ''} onChange={(e) => set('lastName', e.target.value)} />
+            </div>
           </div>
           <div>
             <label className={labelClass}>טלפון</label>
@@ -360,7 +381,7 @@ export default function ClientTicket() {
       <ConfirmDialog
         isOpen={showDelete}
         title="מחיקת לקוח"
-        message={`האם אתה בטוח שברצונך למחוק את הלקוח ${client.name}? פעולה זו אינה ניתנת לביטול.`}
+        message={`האם אתה בטוח שברצונך למחוק את הלקוח ${getClientName(client)}? פעולה זו אינה ניתנת לביטול.`}
         confirmLabel="מחק לצמיתות"
         destructive
         onConfirm={handleDelete}

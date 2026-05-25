@@ -7,6 +7,7 @@ import { usePhotoshootTypes } from '../hooks/usePhotoshootTypes'
 import NewClientModal from '../components/NewClientModal'
 import { formatDate } from '../utils/dateUtils'
 import { STATUS_CONFIG, STATUS_OPTIONS } from '../utils/statusConfig'
+import { getClientName } from '../utils/clientUtils'
 
 function StatusSelect({ status, onUpdate }) {
   const [open, setOpen] = useState(false)
@@ -92,6 +93,8 @@ export default function Dashboard() {
       const q = search.toLowerCase()
       list = list.filter(
         (c) =>
+          c.firstName?.toLowerCase().includes(q) ||
+          c.lastName?.toLowerCase().includes(q) ||
           c.name?.toLowerCase().includes(q) ||
           c.email?.toLowerCase().includes(q) ||
           c.phone?.includes(q)
@@ -153,7 +156,7 @@ export default function Dashboard() {
         <table className="w-full text-sm">
           <thead className="border-b border-gray-100 bg-gray-50">
             <tr>
-              <th className={thClass} onClick={() => handleSort('name')}>שם <SortIcon field="name" sortField={sortField} sortDir={sortDir} /></th>
+              <th className={thClass} onClick={() => handleSort('firstName')}>שם <SortIcon field="firstName" sortField={sortField} sortDir={sortDir} /></th>
               <th className={thClass}>סטטוס</th>
               <th className={thClass}>סוג צילום</th>
               <th className={thClass} onClick={() => handleSort('shootDate')}>תאריך צילום <SortIcon field="shootDate" sortField={sortField} sortDir={sortDir} /></th>
@@ -168,7 +171,7 @@ export default function Dashboard() {
             {rows.map((c) => (
               <tr key={c.id} onClick={() => navigate(`/dashboard/clients/${c.id}`)}
                 className="cursor-pointer hover:bg-gray-50 transition-colors">
-                <td className="px-4 py-3 font-medium text-gray-900">{c.name || '—'}</td>
+                <td className="px-4 py-3 font-medium text-gray-900">{getClientName(c) || '—'}</td>
                 <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                   <StatusSelect status={c.status} onUpdate={(val) => updateClient(c.id, { status: val })} />
                 </td>

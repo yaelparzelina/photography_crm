@@ -5,6 +5,7 @@ import { useLinks } from '../hooks/useLinks'
 import AgreementTemplate from '../templates/AgreementTemplate'
 import { toInputDate, fromInputDate } from '../utils/dateUtils'
 import { Copy, Check } from 'lucide-react'
+import { getClientName } from '../utils/clientUtils'
 
 const inputClass = 'w-full border border-gray-200 rounded-lg ps-4 pe-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300'
 
@@ -57,7 +58,7 @@ export default function AgreementEditorModal({ isOpen, onClose, client, packages
     setGenerating(true)
     try {
       const snapshot = {
-        clientName: client.name,
+        clientName: getClientName(client),
         photoshootTypeName: type?.name || '',
         packageName: pkg?.name || '',
         shootDate: overrides.shootDate || null,
@@ -97,7 +98,7 @@ export default function AgreementEditorModal({ isOpen, onClose, client, packages
         ) : (
           <div className="space-y-4">
             <div className="bg-gray-50 rounded-xl p-4 text-sm space-y-1 text-gray-600">
-              <p><span className="font-medium">לקוח:</span> {client.name}</p>
+              <p><span className="font-medium">לקוח:</span> {getClientName(client)}</p>
               <p><span className="font-medium">סוג:</span> {type?.name}</p>
               <p><span className="font-medium">חבילה:</span> {pkg.name}</p>
               <p><span className="font-medium">מחיר:</span> ₪{client.price?.toLocaleString() || '—'}</p>
@@ -169,7 +170,7 @@ export default function AgreementEditorModal({ isOpen, onClose, client, packages
       <Modal isOpen={showPreview} onClose={() => setShowPreview(false)}
         title="תצוגה מקדימה — הסכם עבודה" maxWidth="max-w-2xl">
         <AgreementTemplate link={{
-          clientName: client?.name || '',
+          clientName: getClientName(client),
           photoshootTypeName: type?.name || '',
           packageName: pkg?.name || '',
           shootDate: overrides.shootDate || null,

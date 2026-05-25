@@ -8,7 +8,7 @@ export default function NewClientModal({ isOpen, onClose }) {
   const navigate = useNavigate()
   const { createClient } = useClients()
   const { types } = usePhotoshootTypes()
-  const [form, setForm] = useState({ name: '', phone: '', photoshootTypeId: '' })
+  const [form, setForm] = useState({ firstName: '', lastName: '', phone: '', photoshootTypeId: '' })
   const [phoneError, setPhoneError] = useState('')
   const [saving, setSaving] = useState(false)
 
@@ -41,10 +41,17 @@ export default function NewClientModal({ isOpen, onClose }) {
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="לקוח חדש">
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">שם מלא *</label>
-          <input required value={form.name} onChange={(e) => set('name', e.target.value)}
-            className="w-full border border-gray-200 rounded-lg ps-4 pe-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300" />
+        <div className="flex gap-3">
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">שם *</label>
+            <input required value={form.firstName} onChange={(e) => set('firstName', e.target.value)}
+              className="w-full border border-gray-200 rounded-lg ps-4 pe-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300" />
+          </div>
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">שם משפחה *</label>
+            <input required value={form.lastName} onChange={(e) => set('lastName', e.target.value)}
+              className="w-full border border-gray-200 rounded-lg ps-4 pe-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300" />
+          </div>
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">טלפון</label>

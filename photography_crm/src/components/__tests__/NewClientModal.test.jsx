@@ -82,7 +82,8 @@ describe('NewClientModal', () => {
   it('renders form fields when isOpen is true', () => {
     renderModal()
     expect(screen.getByRole('dialog')).toBeInTheDocument()
-    expect(screen.getByText('שם מלא *')).toBeInTheDocument()
+    expect(screen.getByText('שם *')).toBeInTheDocument()
+    expect(screen.getByText('שם משפחה *')).toBeInTheDocument()
     expect(screen.getByText('טלפון')).toBeInTheDocument()
     expect(screen.getByText('סוג צילום')).toBeInTheDocument()
   })
@@ -98,9 +99,10 @@ describe('NewClientModal', () => {
   it('calls createClient with form values on submit', async () => {
     renderModal()
     const inputs = screen.getAllByRole('textbox')
-    // name input is first, phone is second
-    fireEvent.change(inputs[0], { target: { value: 'לקוח חדש' } })
-    fireEvent.change(inputs[1], { target: { value: '050-1111111' } })
+    // firstName is first, lastName is second, phone is third
+    fireEvent.change(inputs[0], { target: { value: 'ישראל' } })
+    fireEvent.change(inputs[1], { target: { value: 'ישראלי' } })
+    fireEvent.change(inputs[2], { target: { value: '050-1111111' } })
     const select = screen.getByDisplayValue('בחר סוג צילום')
     fireEvent.change(select, { target: { value: 'type1' } })
 
@@ -108,7 +110,8 @@ describe('NewClientModal', () => {
 
     await waitFor(() => {
       expect(mockCreateClient).toHaveBeenCalledWith({
-        name: 'לקוח חדש',
+        firstName: 'ישראל',
+        lastName: 'ישראלי',
         phone: '050-1111111',
         photoshootTypeId: 'type1',
       })
@@ -119,7 +122,8 @@ describe('NewClientModal', () => {
     const onClose = vi.fn()
     renderModal({ onClose })
     const inputs = screen.getAllByRole('textbox')
-    fireEvent.change(inputs[0], { target: { value: 'לקוח' } })
+    fireEvent.change(inputs[0], { target: { value: 'לקוח' } }) // firstName
+    fireEvent.change(inputs[1], { target: { value: 'חדש' } }) // lastName
 
     fireEvent.click(screen.getByText('צור לקוח'))
 
