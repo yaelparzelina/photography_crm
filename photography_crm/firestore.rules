@@ -26,5 +26,19 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys()
              .hasOnly(['email', 'agreementSigned', 'agreementSignedAt', 'status']);
     }
+
+    // Public: create (never overwrite) the signed copy of an agreement.
+    // Doc ID must be an active agreement link belonging to this client.
+    match /clients/{clientId}/signedDocuments/{linkId} {
+      allow create: if request.auth == null
+        && get(/databases/$(database)/documents/links/$(linkId)).data.clientId == clientId
+        && get(/databases/$(database)/documents/links/$(linkId)).data.type == 'agreement'
+        && get(/databases/$(database)/documents/links/$(linkId)).data.active == true
+        && request.resource.data.keys().hasOnly(['type', 'linkId', 'agreement', 'agreementText', 'email', 'signature', 'signedAt'])
+        && request.resource.data.linkId == linkId
+        && request.resource.data.signedAt == request.time
+        && request.resource.data.signature is string
+        && request.resource.data.signature.size() < 800000;
+    }
   }
 }

@@ -6,15 +6,19 @@ import { useClients } from '../hooks/useClients'
 import { usePhotoshootTypes } from '../hooks/usePhotoshootTypes'
 import { usePackagesByType } from '../hooks/usePackages'
 import { useLinks } from '../hooks/useLinks'
+import { useSignedDocuments } from '../hooks/useSignedDocuments'
 import StatusBadge from '../components/ui/StatusBadge'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
 import AgreementEditorModal from '../components/AgreementEditorModal'
 import Modal from '../components/ui/Modal'
 import ProposalTemplate from '../templates/ProposalTemplate'
+import SignedAgreementDocument from '../components/SignedAgreementDocument'
+import DisabledHint from '../components/ui/DisabledHint'
+import { printElement } from '../utils/printDocument'
 import { STATUS_OPTIONS } from '../utils/statusConfig'
-import { getClientName } from '../utils/clientUtils'
+import { getClientName, signedDocumentTitle } from '../utils/clientUtils'
 import { formatDate, toInputDate, fromInputDate } from '../utils/dateUtils'
-import { ArrowRight, Copy, Check, Trash2 } from 'lucide-react'
+import { ArrowRight, Copy, Check, Trash2, FileText, Eye, Download } from 'lucide-react'
 
 const inputClass = 'w-full border border-gray-200 rounded-lg ps-4 pe-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300 bg-white'
 const labelClass = 'block text-sm font-medium text-gray-700 mb-1'
@@ -50,8 +54,18 @@ export default function ClientTicket() {
   const [generatingProposal, setGeneratingProposal] = useState(false)
   const [activeLinkId, setActiveLinkId] = useState(null)
   const [showProposalPreview, setShowProposalPreview] = useState(false)
+  const [previewSignedDoc, setPreviewSignedDoc] = useState(null)
+  const [printSignedDoc, setPrintSignedDoc] = useState(null)
 
   const initializedRef = useRef(false)
+  const printRef = useRef(null)
+  const { documents: signedDocuments } = useSignedDocuments(id)
+
+  useEffect(() => {
+    if (!printSignedDoc || !printRef.current) return
+    printElement(printRef.current, signedDocumentTitle(printSignedDoc))
+    setPrintSignedDoc(null)
+  }, [printSignedDoc])
 
   const { packages } = usePackagesByType(form.photoshootTypeId)
   const { createProposalLink } = useLinks()
@@ -176,6 +190,11 @@ export default function ClientTicket() {
     return `${window.location.origin}${import.meta.env.BASE_URL}#/sign/${linkId}`
   }
 
+  const needsTypeHint = !form.photoshootTypeId ? 'יש לבחור סוג צילום בפרטי הצילום תחילה' : null
+  const agreementHint = !form.photoshootTypeId
+    ? 'יש לבחור סוג צילום וחבילה בפרטי הצילום תחילה'
+    : !form.packageId ? 'יש לבחור חבילה בפרטי הצילום תחילה' : null
+
   if (loading) return <div className="text-center py-20 text-gray-400">טוען...</div>
   if (!client) return <div className="text-center py-20 text-gray-500">לקוח לא נמצא</div>
 
@@ -246,11 +265,13 @@ export default function ClientTicket() {
           </div>
           <div>
             <label className={labelClass}>חבילה</label>
-            <select className={inputClass} value={form.packageId || ''}
-              onChange={(e) => set('packageId', e.target.value)} disabled={!form.photoshootTypeId}>
-              <option value="">בחר חבילה</option>
-              {packages.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-            </select>
+            <DisabledHint reason={needsTypeHint} className="block">
+              <select className={`${inputClass} disabled:pointer-events-none disabled:bg-gray-50`} value={form.packageId || ''}
+                onChange={(e) => set('packageId', e.target.value)} disabled={!form.photoshootTypeId}>
+                <option value="">בחר חבילה</option>
+                {packages.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            </DisabledHint>
           </div>
           <div>
             <label className={labelClass}>תאריך צילום</label>
@@ -303,14 +324,18 @@ export default function ClientTicket() {
               </div>
             ) : (
               <div className="flex gap-2 flex-wrap">
-                <button onClick={handleGenerateProposal} disabled={!form.photoshootTypeId || generatingProposal}
-                  className="text-sm bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-700 disabled:opacity-40 transition-colors">
-                  צור קישור
-                </button>
-                <button onClick={() => setShowProposalPreview(true)} disabled={!form.photoshootTypeId}
-                  className="text-sm border border-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 disabled:opacity-40 transition-colors">
-                  תצוגה מקדימה
-                </button>
+                <DisabledHint reason={needsTypeHint}>
+                  <button onClick={handleGenerateProposal} disabled={!form.photoshootTypeId || generatingProposal}
+                    className="text-sm bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-700 disabled:opacity-40 disabled:pointer-events-none transition-colors">
+                    צור קישור
+                  </button>
+                </DisabledHint>
+                <DisabledHint reason={needsTypeHint}>
+                  <button onClick={() => setShowProposalPreview(true)} disabled={!form.photoshootTypeId}
+                    className="text-sm border border-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:pointer-events-none transition-colors">
+                    תצוגה מקדימה
+                  </button>
+                </DisabledHint>
               </div>
             )}
           </div>
@@ -327,10 +352,12 @@ export default function ClientTicket() {
                 </button>
               </div>
             ) : (
-              <button onClick={() => setShowAgreementEditor(true)} disabled={!form.packageId}
-                className="text-sm bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-700 disabled:opacity-40 transition-colors">
-                צור / ערוך הסכם
-              </button>
+              <DisabledHint reason={agreementHint}>
+                <button onClick={() => setShowAgreementEditor(true)} disabled={!form.packageId}
+                  className="text-sm bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-700 disabled:opacity-40 disabled:pointer-events-none transition-colors">
+                  צור / ערוך הסכם
+                </button>
+              </DisabledHint>
             )}
           </div>
         </div>
@@ -345,6 +372,32 @@ export default function ClientTicket() {
             <p className="text-sm text-gray-400">ממתין לחתימת לקוח</p>
           )}
         </div>
+        {/* Signed documents */}
+        {signedDocuments.length > 0 && (
+          <div className="mt-4 pt-4 border-t border-gray-50">
+            <p className="text-sm font-medium text-gray-800 mb-2">מסמכים חתומים</p>
+            <ul className="space-y-2">
+              {signedDocuments.map((d) => (
+                <li key={d.id} className="flex items-center justify-between gap-3 border border-gray-100 rounded-xl px-4 py-3">
+                  <span className="flex items-center gap-2 text-sm text-gray-700 min-w-0">
+                    <FileText className="w-4 h-4 text-gray-400 shrink-0" />
+                    <span className="truncate">{signedDocumentTitle(d)}</span>
+                  </span>
+                  <span className="flex items-center gap-3 shrink-0">
+                    <button onClick={() => setPreviewSignedDoc(d)}
+                      className="flex items-center gap-1 text-xs text-gray-600 hover:text-gray-900">
+                      <Eye className="w-3.5 h-3.5" /> תצוגה מקדימה
+                    </button>
+                    <button onClick={() => setPrintSignedDoc(d)}
+                      className="flex items-center gap-1 text-xs text-gray-600 hover:text-gray-900">
+                      <Download className="w-3.5 h-3.5" /> הורדה
+                    </button>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
 
       {/* Save + Delete + Back */}
@@ -394,6 +447,27 @@ export default function ClientTicket() {
         types={types}
         onLinkCreated={(linkId) => { setActiveLinkId(linkId); setShowAgreementEditor(false) }}
       />
+
+      <Modal isOpen={!!previewSignedDoc} onClose={() => setPreviewSignedDoc(null)}
+        title={previewSignedDoc ? signedDocumentTitle(previewSignedDoc) : ''} maxWidth="max-w-2xl">
+        {previewSignedDoc && (
+          <>
+            <SignedAgreementDocument signedDoc={previewSignedDoc} />
+            <div className="flex justify-start pt-4">
+              <button onClick={() => setPrintSignedDoc(previewSignedDoc)}
+                className="flex items-center gap-1.5 text-sm bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-700">
+                <Download className="w-4 h-4" /> הורדה (PDF)
+              </button>
+            </div>
+          </>
+        )}
+      </Modal>
+
+      {printSignedDoc && (
+        <div aria-hidden="true" style={{ position: 'fixed', left: '-10000px', top: 0, width: '800px' }}>
+          <SignedAgreementDocument ref={printRef} signedDoc={printSignedDoc} />
+        </div>
+      )}
 
       <Modal isOpen={showProposalPreview} onClose={() => setShowProposalPreview(false)}
         title="תצוגה מקדימה — הצעת מחיר" maxWidth="max-w-2xl">

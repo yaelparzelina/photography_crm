@@ -5,14 +5,16 @@ import { vi, describe, it, expect, beforeEach } from 'vitest'
 vi.mock('../../firebase', () => ({ db: {} }))
 
 const mockGetDoc = vi.hoisted(() => vi.fn())
-const mockUpdateDoc = vi.hoisted(() => vi.fn())
+const mockBatchSet = vi.hoisted(() => vi.fn())
+const mockBatchUpdate = vi.hoisted(() => vi.fn())
+const mockBatchCommit = vi.hoisted(() => vi.fn())
 const mockDoc = vi.hoisted(() => vi.fn())
 const mockServerTimestamp = vi.hoisted(() => vi.fn(() => 'SERVER_TS'))
 
 vi.mock('firebase/firestore', () => ({
   doc: mockDoc,
   getDoc: mockGetDoc,
-  updateDoc: mockUpdateDoc,
+  writeBatch: () => ({ set: mockBatchSet, update: mockBatchUpdate, commit: mockBatchCommit }),
   serverTimestamp: mockServerTimestamp,
 }))
 
@@ -27,6 +29,12 @@ vi.mock('../../templates/AgreementTemplate', () => ({
     <div data-testid="agreement-template">
       <span>{link.clientName}</span>
     </div>
+  ),
+}))
+
+vi.mock('../../components/SignaturePad', () => ({
+  default: ({ onChange }) => (
+    <button type="button" onClick={() => onChange('data:image/png;base64,SIG')}>mock-sign</button>
   ),
 }))
 
@@ -54,8 +62,8 @@ function makeSnap({ exists = true, data = activeLink } = {}) {
 describe('ClientSigning', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockDoc.mockReturnValue({})
-    mockUpdateDoc.mockResolvedValue(undefined)
+    mockDoc.mockImplementation((_db, ...path) => path.join('/'))
+    mockBatchCommit.mockResolvedValue(undefined)
   })
 
   it('shows loading state initially', () => {
@@ -104,12 +112,11 @@ describe('ClientSigning', () => {
     await waitFor(() => {
       expect(screen.getByText('כתובת מייל לא תקינה')).toBeInTheDocument()
     })
-    expect(mockUpdateDoc).not.toHaveBeenCalled()
+    expect(mockBatchCommit).not.toHaveBeenCalled()
   })
 
-  it('shows success screen after successful form submission', async () => {
+  it('requires a signature before submitting', async () => {
     mockGetDoc.mockResolvedValue(makeSnap())
-    mockUpdateDoc.mockResolvedValue(undefined)
     render(<ClientSigning />)
     await waitFor(() => screen.getByPlaceholderText('your@email.com'))
 
@@ -118,19 +125,64 @@ describe('ClientSigning', () => {
     fireEvent.submit(emailInput.closest('form'))
 
     await waitFor(() => {
-      expect(screen.getByText('תודה!')).toBeInTheDocument()
+      expect(screen.getByText('נדרשת חתימה לאישור ההסכם')).toBeInTheDocument()
     })
-    expect(screen.getByText('ההסכם אושר בהצלחה. נהיה בקשר.')).toBeInTheDocument()
+    expect(mockBatchCommit).not.toHaveBeenCalled()
   })
 
-  it('shows error message if updateDoc throws', async () => {
+  it('saves signed document with agreement, email and signature', async () => {
     mockGetDoc.mockResolvedValue(makeSnap())
-    mockUpdateDoc.mockRejectedValue(new Error('Firestore error'))
     render(<ClientSigning />)
     await waitFor(() => screen.getByPlaceholderText('your@email.com'))
 
     const emailInput = screen.getByPlaceholderText('your@email.com')
     fireEvent.change(emailInput, { target: { value: 'client@example.com' } })
+    fireEvent.click(screen.getByText('mock-sign'))
+    fireEvent.submit(emailInput.closest('form'))
+
+    await waitFor(() => expect(mockBatchCommit).toHaveBeenCalled())
+    expect(mockBatchSet).toHaveBeenCalledWith(
+      'clients/client-1/signedDocuments/link-1',
+      expect.objectContaining({
+        type: 'agreement',
+        linkId: 'link-1',
+        email: 'client@example.com',
+        signature: 'data:image/png;base64,SIG',
+        signedAt: 'SERVER_TS',
+        agreement: expect.objectContaining({ clientName: 'ישראל ישראלי', price: 3000 }),
+      })
+    )
+    expect(mockBatchUpdate).toHaveBeenCalledWith(
+      'clients/client-1',
+      expect.objectContaining({ email: 'client@example.com', agreementSigned: true, status: 'agreement_signed' })
+    )
+  })
+
+  it('shows success screen after successful form submission', async () => {
+    mockGetDoc.mockResolvedValue(makeSnap())
+    render(<ClientSigning />)
+    await waitFor(() => screen.getByPlaceholderText('your@email.com'))
+
+    const emailInput = screen.getByPlaceholderText('your@email.com')
+    fireEvent.change(emailInput, { target: { value: 'client@example.com' } })
+    fireEvent.click(screen.getByText('mock-sign'))
+    fireEvent.submit(emailInput.closest('form'))
+
+    await waitFor(() => {
+      expect(screen.getByText('תודה!')).toBeInTheDocument()
+    })
+    expect(screen.getByText('ההסכם אושר בהצלחה. נהיה בקשר.')).toBeInTheDocument()
+  })
+
+  it('shows error message if saving fails', async () => {
+    mockGetDoc.mockResolvedValue(makeSnap())
+    mockBatchCommit.mockRejectedValue(new Error('Firestore error'))
+    render(<ClientSigning />)
+    await waitFor(() => screen.getByPlaceholderText('your@email.com'))
+
+    const emailInput = screen.getByPlaceholderText('your@email.com')
+    fireEvent.change(emailInput, { target: { value: 'client@example.com' } })
+    fireEvent.click(screen.getByText('mock-sign'))
     fireEvent.submit(emailInput.closest('form'))
 
     await waitFor(() => {

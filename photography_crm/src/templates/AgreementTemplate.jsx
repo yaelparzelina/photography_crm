@@ -1,7 +1,7 @@
 import { formatDate } from '../utils/dateUtils'
 
-export default function AgreementTemplate({ link }) {
-  const today = formatDate(new Date())
+export default function AgreementTemplate({ link, date }) {
+  const today = formatDate(date || new Date())
   const shootDate = link.shootDate
     ? formatDate(link.shootDate.toDate ? link.shootDate.toDate() : new Date(link.shootDate))
     : '___________'

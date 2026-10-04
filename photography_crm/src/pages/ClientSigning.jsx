@@ -1,9 +1,15 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
-import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore'
+import { doc, getDoc, writeBatch, serverTimestamp } from 'firebase/firestore'
 import { db } from '../firebase'
 import AgreementTemplate from '../templates/AgreementTemplate'
 import PublicLayout from '../components/layout/PublicLayout'
+import SignaturePad from '../components/SignaturePad'
+
+const AGREEMENT_FIELDS = [
+  'clientName', 'photoshootTypeName', 'packageName', 'shootDate', 'price',
+  'photoCount', 'includesAlbum', 'albumSize', 'albumPages',
+]
 
 export default function ClientSigning() {
   const { linkId } = useParams()
@@ -11,6 +17,10 @@ export default function ClientSigning() {
   const [loading, setLoading] = useState(true)
   const [email, setEmail] = useState('')
   const [emailError, setEmailError] = useState('')
+  const [signature, setSignature] = useState(null)
+  const [signatureError, setSignatureError] = useState('')
+  const [submitError, setSubmitError] = useState('')
+  const agreementRef = useRef(null)
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
 
@@ -23,25 +33,43 @@ export default function ClientSigning() {
 
   async function handleSubmit(e) {
     e.preventDefault()
+    let valid = true
     if (!email.trim()) {
       setEmailError('נדרש אימייל לאישור ההסכם')
-      return
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      valid = false
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setEmailError('כתובת מייל לא תקינה')
-      return
+      valid = false
     }
+    if (!signature) {
+      setSignatureError('נדרשת חתימה לאישור ההסכם')
+      valid = false
+    }
+    if (!valid) return
     setSubmitting(true)
+    setSubmitError('')
     try {
-      await updateDoc(doc(db, 'clients', link.clientId), {
+      const agreement = Object.fromEntries(AGREEMENT_FIELDS.map((f) => [f, link[f] ?? null]))
+      const batch = writeBatch(db)
+      batch.set(doc(db, 'clients', link.clientId, 'signedDocuments', link.id), {
+        type: 'agreement',
+        linkId: link.id,
+        agreement,
+        agreementText: agreementRef.current?.innerText || '',
+        email,
+        signature,
+        signedAt: serverTimestamp(),
+      })
+      batch.update(doc(db, 'clients', link.clientId), {
         email,
         agreementSigned: true,
         agreementSignedAt: serverTimestamp(),
         status: 'agreement_signed',
       })
+      await batch.commit()
       setSuccess(true)
     } catch {
-      setEmailError('אירעה שגיאה, אנא נסה שוב')
+      setSubmitError('אירעה שגיאה, אנא נסה שוב')
       setSubmitting(false)
     }
   }
@@ -68,7 +96,9 @@ export default function ClientSigning() {
   return (
     <PublicLayout>
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <AgreementTemplate link={link} />
+        <div ref={agreementRef}>
+          <AgreementTemplate link={link} />
+        </div>
         <div className="px-8 pb-8 pt-4 border-t border-gray-100">
           <h3 className="font-semibold text-gray-900 mb-4 text-base">אישור ההסכם</h3>
           <form onSubmit={handleSubmit} noValidate className="space-y-4">
@@ -82,6 +112,15 @@ export default function ClientSigning() {
                 className={`w-full border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300 ${emailError ? 'border-red-400' : 'border-gray-200'}`} />
               {emailError && <p className="text-red-600 text-xs mt-1">{emailError}</p>}
             </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                חתימה — בחתימתי אני מאשר/ת שקראתי את תנאי ההסכם ואני מסכים/ה להם
+              </label>
+              <SignaturePad hasError={!!signatureError}
+                onChange={(data) => { setSignature(data); setSignatureError('') }} />
+              {signatureError && <p className="text-red-600 text-xs mt-1">{signatureError}</p>}
+            </div>
+            {submitError && <p className="text-red-600 text-sm">{submitError}</p>}
             <button type="submit" disabled={submitting}
               className="w-full bg-gray-900 text-white rounded-lg py-3 text-sm font-medium hover:bg-gray-700 disabled:opacity-50 transition-colors">
               {submitting ? 'שולח...' : 'אני מאשר/ת את ההסכם'}

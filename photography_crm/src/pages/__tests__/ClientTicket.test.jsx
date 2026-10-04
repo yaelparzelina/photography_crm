@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { vi, describe, it, expect, beforeEach } from 'vitest'
 
@@ -48,6 +48,14 @@ const mockUseLinks = vi.hoisted(() => vi.fn())
 vi.mock('../../hooks/useLinks', () => ({
   useLinks: () => mockUseLinks(),
 }))
+
+const mockUseSignedDocuments = vi.hoisted(() => vi.fn())
+vi.mock('../../hooks/useSignedDocuments', () => ({
+  useSignedDocuments: () => mockUseSignedDocuments(),
+}))
+
+const mockPrintElement = vi.hoisted(() => vi.fn())
+vi.mock('../../utils/printDocument', () => ({ printElement: mockPrintElement }))
 
 // --- Router mock ---
 const mockNavigate = vi.hoisted(() => vi.fn())
@@ -133,6 +141,7 @@ describe('ClientTicket', () => {
     mockUsePackagesByType.mockReturnValue({ packages: defaultPackages })
     mockCreateProposalLink.mockResolvedValue('proposal-link-123')
     mockUseLinks.mockReturnValue({ createProposalLink: mockCreateProposalLink })
+    mockUseSignedDocuments.mockReturnValue({ documents: [] })
   })
 
   it('shows loading state when onSnapshot has not resolved', () => {
@@ -248,6 +257,59 @@ describe('ClientTicket', () => {
     expect(screen.getByText(/חוזה נחתם ב/)).toBeInTheDocument()
     expect(screen.getByText(/15\/06\/2024/)).toBeInTheDocument()
     expect(screen.getByText(/israel@example\.com/)).toBeInTheDocument()
+  })
+
+  it('shows hover hint explaining why agreement button is disabled', () => {
+    setupOnSnapshot(makeSnapshot({ data: { ...clientData, packageId: '' } }))
+    renderTicket()
+    const btn = screen.getByText('צור / ערוך הסכם')
+    expect(btn).toBeDisabled()
+    expect(btn.parentElement).toHaveTextContent('יש לבחור חבילה בפרטי הצילום תחילה')
+  })
+
+  it('does not show hint when agreement button is enabled', () => {
+    setupOnSnapshot(makeSnapshot())
+    renderTicket()
+    expect(screen.queryByText('יש לבחור חבילה בפרטי הצילום תחילה')).not.toBeInTheDocument()
+  })
+
+  describe('signed documents', () => {
+    const signedDoc = {
+      id: 'link-9',
+      type: 'agreement',
+      email: 'israel@example.com',
+      signature: 'data:image/png;base64,SIG',
+      signedAt: { toDate: () => new Date('2024-06-15') },
+      agreement: { clientName: 'ישראל ישראלי', photoshootTypeName: 'צילום חתונה', packageName: 'חבילה בסיסית' },
+    }
+    const title = 'הסכם עבודה — ישראל ישראלי — 15/06/2024'
+
+    it('lists signed agreement with type, client name and signing date', () => {
+      mockUseSignedDocuments.mockReturnValue({ documents: [signedDoc] })
+      setupOnSnapshot(makeSnapshot())
+      renderTicket()
+      expect(screen.getByText('מסמכים חתומים')).toBeInTheDocument()
+      expect(screen.getByText(title)).toBeInTheDocument()
+    })
+
+    it('preview shows the signed agreement with signature and email', () => {
+      mockUseSignedDocuments.mockReturnValue({ documents: [signedDoc] })
+      setupOnSnapshot(makeSnapshot())
+      renderTicket()
+      const row = screen.getByText(title).closest('li')
+      fireEvent.click(within(row).getByText('תצוגה מקדימה'))
+      expect(screen.getByAltText('חתימת הלקוח')).toHaveAttribute('src', 'data:image/png;base64,SIG')
+      expect(screen.getAllByText(/israel@example\.com/).length).toBeGreaterThan(0)
+    })
+
+    it('download prints the signed document with its title', () => {
+      mockUseSignedDocuments.mockReturnValue({ documents: [signedDoc] })
+      setupOnSnapshot(makeSnapshot())
+      renderTicket()
+      const row = screen.getByText(title).closest('li')
+      fireEvent.click(within(row).getByText('הורדה'))
+      expect(mockPrintElement).toHaveBeenCalledWith(expect.any(HTMLElement), title)
+    })
   })
 
   it('shows "ממתין לחתימת לקוח" when agreement not signed', () => {
