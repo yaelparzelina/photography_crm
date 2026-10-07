@@ -107,7 +107,7 @@ describe('AgreementEditorModal', () => {
     // pkg1 has includesAlbum: false, so album fields not visible initially
     expect(screen.queryByPlaceholderText('30x30')).not.toBeInTheDocument()
     // Toggle on
-    const albumToggle = screen.getByRole('button', { name: /החלף כולל אלבום/ })
+    const albumToggle = screen.getByRole('switch', { name: /החלף כולל אלבום/ })
     fireEvent.click(albumToggle)
     expect(screen.getByPlaceholderText('30x30')).toBeInTheDocument()
   })
@@ -117,7 +117,7 @@ describe('AgreementEditorModal', () => {
     // pkg2 has includesAlbum: true, so album fields visible
     expect(screen.getByPlaceholderText('30x30')).toBeInTheDocument()
     // Toggle off
-    const albumToggle = screen.getByRole('button', { name: /החלף כולל אלבום/ })
+    const albumToggle = screen.getByRole('switch', { name: /החלף כולל אלבום/ })
     fireEvent.click(albumToggle)
     expect(screen.queryByPlaceholderText('30x30')).not.toBeInTheDocument()
   })

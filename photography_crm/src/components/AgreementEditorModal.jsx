@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import Modal from './ui/Modal'
 import ConfirmDialog from './ui/ConfirmDialog'
+import Toggle from './ui/Toggle'
 import { useLinks } from '../hooks/useLinks'
 import AgreementTemplate from '../templates/AgreementTemplate'
 import { toInputDate, fromInputDate } from '../utils/dateUtils'
@@ -121,10 +122,8 @@ export default function AgreementEditorModal({ isOpen, onClose, client, packages
 
             <div className="flex items-center gap-3">
               <label className="text-sm font-medium text-gray-700">כולל אלבום מודפס</label>
-              <button type="button" aria-label="החלף כולל אלבום" onClick={() => set('includesAlbum', !overrides.includesAlbum)}
-                className={`relative w-10 h-6 rounded-full transition-colors ${overrides.includesAlbum ? 'bg-green-500' : 'bg-gray-200'}`}>
-                <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all duration-200 ${overrides.includesAlbum ? 'right-5' : 'right-1'}`} />
-              </button>
+              <Toggle label="החלף כולל אלבום" checked={overrides.includesAlbum}
+                onChange={(v) => set('includesAlbum', v)} />
             </div>
 
             {overrides.includesAlbum && (

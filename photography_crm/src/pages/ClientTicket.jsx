@@ -14,6 +14,7 @@ import Modal from '../components/ui/Modal'
 import ProposalTemplate from '../templates/ProposalTemplate'
 import SignedAgreementDocument from '../components/SignedAgreementDocument'
 import DisabledHint from '../components/ui/DisabledHint'
+import Toggle from '../components/ui/Toggle'
 import { printElement } from '../utils/printDocument'
 import { STATUS_OPTIONS } from '../utils/statusConfig'
 import { getClientName, signedDocumentTitle } from '../utils/clientUtils'
@@ -286,11 +287,8 @@ export default function ClientTicket() {
           </div>
           <div className="flex items-center gap-3 pt-2">
             <label className="text-sm font-medium text-gray-700">שילם מקדמה</label>
-            <button type="button" onClick={() => set('paidAdvance', !form.paidAdvance)}
-              aria-label="שילם מקדמה"
-              className={`relative w-10 h-6 rounded-full transition-colors ${form.paidAdvance ? 'bg-green-500' : 'bg-gray-200'}`}>
-              <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all duration-200 ${form.paidAdvance ? 'right-5' : 'right-1'}`} />
-            </button>
+            <Toggle label="שילם מקדמה" checked={form.paidAdvance}
+              onChange={(v) => set('paidAdvance', v)} />
           </div>
         </div>
         <div className="mt-4">

@@ -4,6 +4,7 @@ import { db } from '../firebase'
 import { usePhotoshootTypes } from '../hooks/usePhotoshootTypes'
 import { usePackagesByType } from '../hooks/usePackages'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
+import Toggle from '../components/ui/Toggle'
 import { Plus, Edit2, Trash2, Check, X, ChevronUp, ChevronDown } from 'lucide-react'
 
 const DEFAULT_TYPES = ['בת מצווה', 'בר מצווה', 'תדמית', 'גיל שנה', 'משפחה', 'עלייה לתורה', 'ניו בורן', 'בוק שחקן']
@@ -142,14 +143,8 @@ function PkgFields({ data, setter }) {
         <input type="number" className={inputClass} value={data.locationCount || ''} onChange={(e) => setter('locationCount', e.target.value)} /></div>
       <div className="col-span-2 flex items-center gap-2">
         <label className="text-xs text-gray-500">כולל אלבום</label>
-        <button
-          type="button"
-          aria-label="החלף כולל אלבום"
-          onClick={() => setter('includesAlbum', !data.includesAlbum)}
-          className={`w-8 h-5 rounded-full transition-colors ${data.includesAlbum ? 'bg-green-500' : 'bg-gray-200'}`}
-        >
-          <span className={`block w-3 h-3 bg-white rounded-full shadow mx-1 transition-transform ${data.includesAlbum ? '-translate-x-3 rtl:translate-x-3' : ''}`} />
-        </button>
+        <Toggle label="החלף כולל אלבום" checked={data.includesAlbum}
+          onChange={(v) => setter('includesAlbum', v)} />
       </div>
       {data.includesAlbum && (
         <>
