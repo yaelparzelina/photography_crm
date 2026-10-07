@@ -32,8 +32,13 @@ export default function AgreementTemplate({ link, date }) {
         <ul className="space-y-1.5 text-sm text-gray-700">
           <li>✓ סשן צילומי {link.photoshootTypeName} — {link.packageName} בתאריך {shootDate}</li>
           <li>✓ {link.photoCount} תמונות ערוכות ברמה גבוהה</li>
-          {link.includesAlbum && link.albumSize && (
-            <li>✓ אלבום מעוצב ומודפס בגודל {link.albumSize} ס"מ, {link.albumPages} עמודים, פתיחה שטוחה</li>
+          {link.includesAlbum && (
+            <li>
+              ✓ אלבום מעוצב ומודפס
+              {link.albumSize ? ` בגודל ${link.albumSize} ס"מ` : ''}
+              {link.albumPages ? `, ${link.albumPages} עמודים` : ''}
+              , פתיחה שטוחה
+            </li>
           )}
         </ul>
         {link.price && (

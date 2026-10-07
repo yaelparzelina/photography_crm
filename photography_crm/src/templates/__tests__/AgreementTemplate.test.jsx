@@ -59,6 +59,12 @@ describe('AgreementTemplate', () => {
     expect(screen.queryByText(/האלבום יימסר עם שליח לבית הלקוח/)).not.toBeInTheDocument()
   })
 
+  it('shows album line when includesAlbum=true even without size and pages', () => {
+    render(<AgreementTemplate link={{ ...sampleLink, albumSize: '', albumPages: '' }} />)
+    expect(screen.getByText(/✓ אלבום מעוצב ומודפס/)).toBeInTheDocument()
+    expect(screen.queryByText(/בגודל/)).not.toBeInTheDocument()
+  })
+
   it('renders price', () => {
     render(<AgreementTemplate link={sampleLink} />)
     expect(screen.getByText(/עלות החבילה — ₪2,515/)).toBeInTheDocument()
