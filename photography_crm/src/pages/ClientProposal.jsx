@@ -4,6 +4,7 @@ import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firesto
 import { db } from '../firebase'
 import ProposalTemplate from '../templates/ProposalTemplate'
 import PublicLayout from '../components/layout/PublicLayout'
+import { cardClass } from '../components/ui/styles'
 
 export default function ClientProposal() {
   const { linkId } = useParams()
@@ -36,7 +37,7 @@ export default function ClientProposal() {
   if (state.loading) return <PublicLayout><div className="text-center py-20 text-gray-400">טוען...</div></PublicLayout>
   if (!state.link) return (
     <PublicLayout>
-      <div className="text-center py-20 bg-white rounded-2xl border border-gray-100 shadow-sm">
+      <div className={`${cardClass} text-center py-20`}>
         <p className="text-gray-600 text-sm">קישור זה אינו פעיל יותר.</p>
         <p className="text-gray-400 text-xs mt-1">אנא צור קשר עם הצלמת.</p>
       </div>
@@ -45,7 +46,7 @@ export default function ClientProposal() {
 
   return (
     <PublicLayout>
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
+      <div className={cardClass}>
         <ProposalTemplate photoshootTypeName={state.typeName} packages={state.packages} />
       </div>
     </PublicLayout>

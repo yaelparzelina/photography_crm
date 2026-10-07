@@ -5,6 +5,9 @@ import { Plus, Search, ChevronUp, ChevronDown, X } from 'lucide-react'
 import { useClients } from '../hooks/useClients'
 import { usePhotoshootTypes } from '../hooks/usePhotoshootTypes'
 import NewClientModal from '../components/NewClientModal'
+import Button from '../components/ui/Button'
+import IconButton from '../components/ui/IconButton'
+import { cardClass } from '../components/ui/styles'
 import { formatDate } from '../utils/dateUtils'
 import { STATUS_CONFIG, STATUS_OPTIONS } from '../utils/statusConfig'
 import { getClientName } from '../utils/clientUtils'
@@ -126,10 +129,9 @@ export default function Dashboard() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-semibold text-gray-900">לקוחות</h1>
-        <button onClick={() => setShowNew(true)}
-          className="flex items-center gap-1.5 bg-gray-900 text-white text-sm px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">
+        <Button onClick={() => setShowNew(true)}>
           <Plus className="w-4 h-4" /> לקוח חדש
-        </button>
+        </Button>
       </div>
 
       <div className="flex gap-3 mb-4">
@@ -140,9 +142,9 @@ export default function Dashboard() {
             placeholder="חיפוש לפי שם, טלפון, מייל..."
             className="w-full border border-gray-200 rounded-lg ps-10 pe-8 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300" />
           {search && (
-            <button onClick={() => setSearch('')} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+            <IconButton label="נקה חיפוש" onClick={() => setSearch('')} className="absolute left-2 top-1/2 -translate-y-1/2">
               <X className="w-4 h-4" />
-            </button>
+            </IconButton>
           )}
         </div>
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
@@ -152,7 +154,7 @@ export default function Dashboard() {
         </select>
       </div>
 
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className={`${cardClass} overflow-hidden`}>
         <table className="w-full text-sm">
           <thead className="border-b border-gray-100 bg-gray-50">
             <tr>

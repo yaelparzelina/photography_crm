@@ -10,19 +10,22 @@ import { useSignedDocuments } from '../hooks/useSignedDocuments'
 import StatusBadge from '../components/ui/StatusBadge'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
 import AgreementEditorModal from '../components/AgreementEditorModal'
-import Modal from '../components/ui/Modal'
+import Modal, { ModalActions } from '../components/ui/Modal'
 import ProposalTemplate from '../templates/ProposalTemplate'
 import SignedAgreementDocument from '../components/SignedAgreementDocument'
 import DisabledHint from '../components/ui/DisabledHint'
 import Toggle from '../components/ui/Toggle'
+import Button from '../components/ui/Button'
+import Card from '../components/ui/Card'
+import Field from '../components/ui/Field'
+import CopyLink from '../components/ui/CopyLink'
+import { inputClass, itemClass } from '../components/ui/styles'
 import { printElement } from '../utils/printDocument'
 import { STATUS_OPTIONS } from '../utils/statusConfig'
 import { getClientName, signedDocumentTitle } from '../utils/clientUtils'
 import { formatDate, toInputDate, fromInputDate } from '../utils/dateUtils'
-import { ArrowRight, Copy, Check, Trash2, FileText, Eye, Download } from 'lucide-react'
+import { ArrowRight, Trash2, FileText, Eye, Download } from 'lucide-react'
 
-const inputClass = 'w-full border border-gray-200 rounded-lg ps-4 pe-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300 bg-white'
-const labelClass = 'block text-sm font-medium text-gray-700 mb-1'
 
 function normalizeClientData(data) {
   const { name: legacyName, ...rest } = data
@@ -50,8 +53,6 @@ export default function ClientTicket() {
   const [showDelete, setShowDelete] = useState(false)
   const [showAgreementEditor, setShowAgreementEditor] = useState(false)
   const [proposalLinkId, setProposalLinkId] = useState(null)
-  const [copiedProposal, setCopiedProposal] = useState(false)
-  const [copiedAgreement, setCopiedAgreement] = useState(false)
   const [generatingProposal, setGeneratingProposal] = useState(false)
   const [activeLinkId, setActiveLinkId] = useState(null)
   const [showProposalPreview, setShowProposalPreview] = useState(false)
@@ -201,161 +202,116 @@ export default function ClientTicket() {
 
   return (
     <div className="max-w-3xl">
-      <button onClick={handleNavigateBack}
-        className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-900 mb-6 transition-colors">
+      <Button variant="link" onClick={handleNavigateBack} className="mb-6">
         <ArrowRight className="w-4 h-4" /> חזרה לרשימה
-      </button>
+      </Button>
 
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-semibold text-gray-900">{getClientName(client) || 'לקוח חדש'}</h1>
         <StatusBadge status={form.status} />
       </div>
 
-      {/* Section: Status */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-4">
-        <h2 className="text-base font-semibold text-gray-800 mb-4">סטטוס</h2>
-        <select className={inputClass} value={form.status || 'new_lead'} onChange={(e) => set('status', e.target.value)}>
+      <Card title="סטטוס" className="mb-4">
+        <select className={inputClass()} value={form.status || 'new_lead'} onChange={(e) => set('status', e.target.value)}>
           {STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
-      </div>
+      </Card>
 
-      {/* Section: Client Details */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-4">
-        <h2 className="text-base font-semibold text-gray-800 mb-4">פרטי לקוח</h2>
+      <Card title="פרטי לקוח" className="mb-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="sm:col-span-2 flex gap-3">
-            <div className="flex-1">
-              <label className={labelClass}>שם</label>
-              <input className={inputClass} value={form.firstName || ''} onChange={(e) => set('firstName', e.target.value)} />
-            </div>
-            <div className="flex-1">
-              <label className={labelClass}>שם משפחה</label>
-              <input className={inputClass} value={form.lastName || ''} onChange={(e) => set('lastName', e.target.value)} />
-            </div>
+            <Field label="שם" className="flex-1">
+              <input className={inputClass()} value={form.firstName || ''} onChange={(e) => set('firstName', e.target.value)} />
+            </Field>
+            <Field label="שם משפחה" className="flex-1">
+              <input className={inputClass()} value={form.lastName || ''} onChange={(e) => set('lastName', e.target.value)} />
+            </Field>
           </div>
-          <div>
-            <label className={labelClass}>טלפון</label>
-            <input className={`${inputClass} ${phoneError ? 'border-red-400' : ''}`} value={form.phone || ''} placeholder="05X-XXXXXXX" onChange={(e) => set('phone', e.target.value)} />
-            {phoneError && <p className="text-red-600 text-xs mt-1">{phoneError}</p>}
-          </div>
-          <div>
-            <label className={labelClass}>אימייל</label>
-            <input type="email" className={`${inputClass} ${emailError ? 'border-red-400' : ''}`} value={form.email || ''} onChange={(e) => set('email', e.target.value)} />
-            {emailError && <p className="text-red-600 text-xs mt-1">{emailError}</p>}
-          </div>
-          <div>
-            <label className={labelClass}>תאריך לידה</label>
-            <input type="date" className={inputClass}
+          <Field label="טלפון" error={phoneError}>
+            <input className={inputClass(!!phoneError)} value={form.phone || ''} placeholder="05X-XXXXXXX" onChange={(e) => set('phone', e.target.value)} />
+          </Field>
+          <Field label="אימייל" error={emailError}>
+            <input type="email" className={inputClass(!!emailError)} value={form.email || ''} onChange={(e) => set('email', e.target.value)} />
+          </Field>
+          <Field label="תאריך לידה">
+            <input type="date" className={inputClass()}
               value={form.dateOfBirth ? toInputDate(form.dateOfBirth) : ''}
               onChange={(e) => set('dateOfBirth', fromInputDate(e.target.value))} />
-          </div>
+          </Field>
         </div>
-      </div>
+      </Card>
 
-      {/* Section: Shoot Details */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-4">
-        <h2 className="text-base font-semibold text-gray-800 mb-4">פרטי הצילום</h2>
+      <Card title="פרטי הצילום" className="mb-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className={labelClass}>סוג צילום</label>
-            <select className={inputClass} value={form.photoshootTypeId || ''}
+          <Field label="סוג צילום">
+            <select className={inputClass()} value={form.photoshootTypeId || ''}
               onChange={(e) => { set('photoshootTypeId', e.target.value); set('packageId', '') }}>
               <option value="">בחר סוג</option>
               {types.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
             </select>
-          </div>
-          <div>
-            <label className={labelClass}>חבילה</label>
+          </Field>
+          <Field label="חבילה">
             <DisabledHint reason={needsTypeHint} className="block">
-              <select className={`${inputClass} disabled:pointer-events-none disabled:bg-gray-50`} value={form.packageId || ''}
+              <select className={`${inputClass()} disabled:pointer-events-none`} value={form.packageId || ''}
                 onChange={(e) => set('packageId', e.target.value)} disabled={!form.photoshootTypeId}>
                 <option value="">בחר חבילה</option>
                 {packages.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
               </select>
             </DisabledHint>
-          </div>
-          <div>
-            <label className={labelClass}>תאריך צילום</label>
-            <input type="date" className={inputClass}
+          </Field>
+          <Field label="תאריך צילום">
+            <input type="date" className={inputClass()}
               value={form.shootDate ? toInputDate(form.shootDate) : ''}
               onChange={(e) => set('shootDate', fromInputDate(e.target.value))} />
-          </div>
-          <div>
-            <label className={labelClass}>מחיר (₪)</label>
-            <input type="number" className={inputClass} value={form.price ?? ''}
+          </Field>
+          <Field label="מחיר (₪)">
+            <input type="number" className={inputClass()} value={form.price ?? ''}
               onChange={(e) => set('price', e.target.value ? Number(e.target.value) : null)} />
-          </div>
-          <div className="flex items-center gap-3 pt-2">
-            <label className="text-sm font-medium text-gray-700">שילם מקדמה</label>
-            <Toggle label="שילם מקדמה" checked={form.paidAdvance}
-              onChange={(v) => set('paidAdvance', v)} />
+          </Field>
+          <div className="pt-2">
+            <Toggle text="שילם מקדמה" checked={form.paidAdvance} onChange={(v) => set('paidAdvance', v)} />
           </div>
         </div>
-        <div className="mt-4">
-          <label className={labelClass}>הערות</label>
-          <textarea rows={3} className={inputClass} value={form.notes || ''}
+        <Field label="הערות" className="mt-4">
+          <textarea rows={3} className={inputClass()} value={form.notes || ''}
             onChange={(e) => set('notes', e.target.value)} />
-        </div>
-      </div>
+        </Field>
+      </Card>
 
-      {/* Section: Documents */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 mb-4">
-        <h2 className="text-base font-semibold text-gray-800 mb-4">מסמכים</h2>
+      <Card title="מסמכים" className="mb-4">
         <div className="grid sm:grid-cols-2 gap-4">
           {/* Proposal */}
-          <div className="border border-gray-100 rounded-xl p-4">
+          <div className={`${itemClass} p-4`}>
             <p className="text-sm font-medium text-gray-800 mb-3">הצעת מחיר</p>
             {proposalLinkId ? (
-              <div className="space-y-2">
-                <input readOnly value={proposalUrl(proposalLinkId)}
-                  className="w-full text-xs border border-gray-200 rounded-lg ps-3 pe-3 py-2 bg-gray-50 text-gray-600" />
-                <div className="flex gap-2">
-                  <button onClick={() => { navigator.clipboard.writeText(proposalUrl(proposalLinkId)); setCopiedProposal(true); setTimeout(() => setCopiedProposal(false), 2000) }}
-                    className="flex items-center gap-1 text-xs text-gray-600 hover:text-gray-900">
-                    {copiedProposal ? <><Check className="w-3 h-3 text-green-600" /> הועתק!</> : <><Copy className="w-3 h-3" /> העתק קישור</>}
-                  </button>
-                  <button onClick={() => setShowProposalPreview(true)}
-                    className="text-xs text-gray-500 hover:text-gray-800 underline underline-offset-2">
-                    תצוגה מקדימה
-                  </button>
-                </div>
-              </div>
+              <CopyLink url={proposalUrl(proposalLinkId)}>
+                <Button variant="link" size="sm" onClick={() => setShowProposalPreview(true)}>
+                  <Eye className="w-3.5 h-3.5" /> תצוגה מקדימה
+                </Button>
+              </CopyLink>
             ) : (
               <div className="flex gap-2 flex-wrap">
-                <DisabledHint reason={needsTypeHint}>
-                  <button onClick={handleGenerateProposal} disabled={!form.photoshootTypeId || generatingProposal}
-                    className="text-sm bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-700 disabled:opacity-40 disabled:pointer-events-none transition-colors">
-                    צור קישור
-                  </button>
-                </DisabledHint>
-                <DisabledHint reason={needsTypeHint}>
-                  <button onClick={() => setShowProposalPreview(true)} disabled={!form.photoshootTypeId}
-                    className="text-sm border border-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:pointer-events-none transition-colors">
-                    תצוגה מקדימה
-                  </button>
-                </DisabledHint>
+                <Button onClick={handleGenerateProposal} disabled={!form.photoshootTypeId || generatingProposal}
+                  disabledReason={needsTypeHint}>
+                  צור קישור
+                </Button>
+                <Button variant="secondary" onClick={() => setShowProposalPreview(true)} disabled={!form.photoshootTypeId}
+                  disabledReason={needsTypeHint}>
+                  תצוגה מקדימה
+                </Button>
               </div>
             )}
           </div>
           {/* Agreement */}
-          <div className="border border-gray-100 rounded-xl p-4">
+          <div className={`${itemClass} p-4`}>
             <p className="text-sm font-medium text-gray-800 mb-3">הסכם עבודה</p>
             {activeLinkId ? (
-              <div className="space-y-2">
-                <input readOnly value={agreementUrl(activeLinkId)}
-                  className="w-full text-xs border border-gray-200 rounded-lg ps-3 pe-3 py-2 bg-gray-50 text-gray-600" />
-                <button onClick={() => { navigator.clipboard.writeText(agreementUrl(activeLinkId)); setCopiedAgreement(true); setTimeout(() => setCopiedAgreement(false), 2000) }}
-                  className="flex items-center gap-1 text-xs text-gray-600 hover:text-gray-900">
-                  {copiedAgreement ? <><Check className="w-3 h-3 text-green-600" /> הועתק!</> : <><Copy className="w-3 h-3" /> העתק קישור</>}
-                </button>
-              </div>
+              <CopyLink url={agreementUrl(activeLinkId)} />
             ) : (
-              <DisabledHint reason={agreementHint}>
-                <button onClick={() => setShowAgreementEditor(true)} disabled={!form.packageId}
-                  className="text-sm bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-700 disabled:opacity-40 disabled:pointer-events-none transition-colors">
-                  צור / ערוך הסכם
-                </button>
-              </DisabledHint>
+              <Button onClick={() => setShowAgreementEditor(true)} disabled={!form.packageId}
+                disabledReason={agreementHint}>
+                צור / ערוך הסכם
+              </Button>
             )}
           </div>
         </div>
@@ -376,44 +332,39 @@ export default function ClientTicket() {
             <p className="text-sm font-medium text-gray-800 mb-2">מסמכים חתומים</p>
             <ul className="space-y-2">
               {signedDocuments.map((d) => (
-                <li key={d.id} className="flex items-center justify-between gap-3 border border-gray-100 rounded-xl px-4 py-3">
+                <li key={d.id} className={`${itemClass} flex items-center justify-between gap-3 px-4 py-3`}>
                   <span className="flex items-center gap-2 text-sm text-gray-700 min-w-0">
                     <FileText className="w-4 h-4 text-gray-400 shrink-0" />
                     <span className="truncate">{signedDocumentTitle(d)}</span>
                   </span>
-                  <span className="flex items-center gap-3 shrink-0">
-                    <button onClick={() => setPreviewSignedDoc(d)}
-                      className="flex items-center gap-1 text-xs text-gray-600 hover:text-gray-900">
+                  <span className="flex items-center gap-4 shrink-0">
+                    <Button variant="link" size="sm" onClick={() => setPreviewSignedDoc(d)}>
                       <Eye className="w-3.5 h-3.5" /> תצוגה מקדימה
-                    </button>
-                    <button onClick={() => setPrintSignedDoc(d)}
-                      className="flex items-center gap-1 text-xs text-gray-600 hover:text-gray-900">
+                    </Button>
+                    <Button variant="link" size="sm" onClick={() => setPrintSignedDoc(d)}>
                       <Download className="w-3.5 h-3.5" /> הורדה
-                    </button>
+                    </Button>
                   </span>
                 </li>
               ))}
             </ul>
           </div>
         )}
-      </div>
+      </Card>
 
       {/* Save + Delete + Back */}
       <div className="flex items-center justify-between mt-4">
         <div className="flex items-center gap-2">
-          <button onClick={() => setShowDelete(true)}
-            className="flex items-center gap-1.5 text-sm text-red-500 hover:text-red-700 border border-red-200 rounded-lg px-4 py-2 transition-colors">
+          <Button variant="danger" onClick={() => setShowDelete(true)}>
             <Trash2 className="w-4 h-4" /> מחק לקוח
-          </button>
-          <button onClick={handleNavigateBack}
-            className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-900 border border-gray-200 rounded-lg px-4 py-2 transition-colors">
+          </Button>
+          <Button variant="secondary" onClick={handleNavigateBack}>
             <ArrowRight className="w-4 h-4" /> חזרה לרשימה
-          </button>
+          </Button>
         </div>
-        <button onClick={handleSave} disabled={saving}
-          className="bg-gray-900 text-white text-sm px-6 py-2.5 rounded-lg hover:bg-gray-700 disabled:opacity-50 transition-colors">
+        <Button size="lg" onClick={handleSave} disabled={saving}>
           {saving ? 'שומר...' : 'שמור שינויים'}
-        </button>
+        </Button>
       </div>
 
       <ConfirmDialog
@@ -451,12 +402,11 @@ export default function ClientTicket() {
         {previewSignedDoc && (
           <>
             <SignedAgreementDocument signedDoc={previewSignedDoc} />
-            <div className="flex justify-start pt-4">
-              <button onClick={() => setPrintSignedDoc(previewSignedDoc)}
-                className="flex items-center gap-1.5 text-sm bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-700">
+            <ModalActions>
+              <Button onClick={() => setPrintSignedDoc(previewSignedDoc)}>
                 <Download className="w-4 h-4" /> הורדה (PDF)
-              </button>
-            </div>
+              </Button>
+            </ModalActions>
           </>
         )}
       </Modal>

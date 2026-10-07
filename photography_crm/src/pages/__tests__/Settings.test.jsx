@@ -138,7 +138,7 @@ describe('Settings - TypesTab', () => {
     expect(editInput).toBeInTheDocument()
 
     // Click X button to cancel
-    const cancelBtn = editInput.closest('div[class*="rounded-xl"]').querySelector('button.text-gray-400')
+    const cancelBtn = screen.getByRole('button', { name: 'בטל' })
     fireEvent.click(cancelBtn)
 
     await waitFor(() => {

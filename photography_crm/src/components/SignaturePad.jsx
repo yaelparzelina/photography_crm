@@ -1,4 +1,5 @@
 import { useRef, useEffect, useState } from 'react'
+import Button from './ui/Button'
 
 export default function SignaturePad({ onChange, hasError = false, height = 180 }) {
   const canvasRef = useRef(null)
@@ -79,9 +80,7 @@ export default function SignaturePad({ onChange, hasError = false, height = 180 
           </span>
         )}
       </div>
-      <button type="button" onClick={clear} className="text-xs text-gray-500 hover:text-gray-800 underline underline-offset-2 mt-1">
-        נקה חתימה
-      </button>
+      <Button variant="link" size="sm" onClick={clear} className="mt-1">נקה חתימה</Button>
     </div>
   )
 }

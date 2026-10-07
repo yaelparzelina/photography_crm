@@ -5,6 +5,11 @@ import { usePhotoshootTypes } from '../hooks/usePhotoshootTypes'
 import { usePackagesByType } from '../hooks/usePackages'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
 import Toggle from '../components/ui/Toggle'
+import Button from '../components/ui/Button'
+import IconButton from '../components/ui/IconButton'
+import Field from '../components/ui/Field'
+import { ModalActions } from '../components/ui/Modal'
+import { inputClass, itemClass } from '../components/ui/styles'
 import { Plus, Edit2, Trash2, Check, X, ChevronUp, ChevronDown } from 'lucide-react'
 
 const DEFAULT_TYPES = ['בת מצווה', 'בר מצווה', 'תדמית', 'גיל שנה', 'משפחה', 'עלייה לתורה', 'ניו בורן', 'בוק שחקן']
@@ -26,8 +31,6 @@ async function seedDefaultData() {
     }
   }
 }
-
-const inputClass = 'border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300 w-full bg-white'
 
 function TypesTab() {
   const { types, loading, createType, updateType, deleteType } = usePhotoshootTypes()
@@ -71,45 +74,42 @@ function TypesTab() {
       {!loading && types.length === 0 && (
         <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between">
           <p className="text-sm text-amber-800">לא קיימים סוגי צילום. האם לאתחל נתוני ברירת מחדל?</p>
-          <button onClick={handleSeed} disabled={seeding}
-            className="text-sm bg-amber-700 text-white px-4 py-1.5 rounded-lg hover:bg-amber-800 disabled:opacity-50 whitespace-nowrap me-2">
+          <Button size="sm" onClick={handleSeed} disabled={seeding} className="me-2">
             {seeding ? 'מאתחל...' : 'אתחל נתונים'}
-          </button>
+          </Button>
         </div>
       )}
       <form onSubmit={handleAdd} className="flex gap-2 mb-6">
-        <input className={inputClass} value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="שם סוג צילום חדש" />
-        <button type="submit" className="flex items-center gap-1.5 bg-gray-900 text-white text-sm px-4 py-2 rounded-lg hover:bg-gray-700 whitespace-nowrap">
-          <Plus className="w-4 h-4" /> הוסף
-        </button>
+        <input className={inputClass()} value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="שם סוג צילום חדש" />
+        <Button type="submit"><Plus className="w-4 h-4" /> הוסף</Button>
       </form>
 
       <div className="space-y-2">
         {types.map((t, i) => (
-          <div key={t.id} className="bg-white border border-gray-100 rounded-xl px-4 py-3 flex items-center gap-3">
-            <div className="flex flex-col gap-0.5">
-              <button aria-label="הזז למעלה" onClick={() => move(i, -1)} disabled={i === 0} className="text-gray-300 hover:text-gray-600 disabled:opacity-0">
-                <ChevronUp className="w-3.5 h-3.5" />
-              </button>
-              <button aria-label="הזז למטה" onClick={() => move(i, 1)} disabled={i === types.length - 1} className="text-gray-300 hover:text-gray-600 disabled:opacity-0">
-                <ChevronDown className="w-3.5 h-3.5" />
-              </button>
+          <div key={t.id} className={`${itemClass} px-4 py-3 flex items-center gap-3`}>
+            <div className="flex flex-col">
+              <IconButton label="הזז למעלה" onClick={() => move(i, -1)} disabled={i === 0} className="p-0">
+                <ChevronUp className="w-4 h-4" />
+              </IconButton>
+              <IconButton label="הזז למטה" onClick={() => move(i, 1)} disabled={i === types.length - 1} className="p-0">
+                <ChevronDown className="w-4 h-4" />
+              </IconButton>
             </div>
             {editId === t.id ? (
               <>
-                <input className={`${inputClass} flex-1`} value={editName} onChange={(e) => setEditName(e.target.value)} autoFocus />
-                <button onClick={handleUpdate} className="text-green-600 hover:text-green-800"><Check className="w-4 h-4" /></button>
-                <button onClick={() => setEditId(null)} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
+                <input className={`${inputClass()} flex-1`} value={editName} onChange={(e) => setEditName(e.target.value)} autoFocus />
+                <IconButton label="שמור" variant="success" onClick={handleUpdate}><Check className="w-4 h-4" /></IconButton>
+                <IconButton label="בטל" onClick={() => setEditId(null)}><X className="w-4 h-4" /></IconButton>
               </>
             ) : (
               <>
                 <span className="flex-1 text-sm text-gray-800">{t.name}</span>
-                <button aria-label="ערוך" onClick={() => { setEditId(t.id); setEditName(t.name) }} className="text-gray-400 hover:text-gray-700">
+                <IconButton label="ערוך" onClick={() => { setEditId(t.id); setEditName(t.name) }}>
                   <Edit2 className="w-4 h-4" />
-                </button>
-                <button aria-label="מחק" onClick={() => setDeleteTarget(t)} className="text-gray-400 hover:text-red-600">
+                </IconButton>
+                <IconButton label="מחק" variant="danger" onClick={() => setDeleteTarget(t)}>
                   <Trash2 className="w-4 h-4" />
-                </button>
+                </IconButton>
               </>
             )}
           </div>
@@ -132,26 +132,25 @@ function TypesTab() {
 // PkgFields must be defined at module scope (NOT inside PackagesTab) to avoid React unmount/remount on every render
 function PkgFields({ data, setter }) {
   return (
-    <div className="grid grid-cols-2 gap-3 mt-3">
-      <div><label className="text-xs text-gray-500 mb-1 block">שם חבילה</label>
-        <input className={inputClass} value={data.name || ''} onChange={(e) => setter('name', e.target.value)} /></div>
-      <div><label className="text-xs text-gray-500 mb-1 block">מחיר (₪)</label>
-        <input type="number" className={inputClass} value={data.price || ''} onChange={(e) => setter('price', e.target.value)} /></div>
-      <div><label className="text-xs text-gray-500 mb-1 block">מספר תמונות</label>
-        <input type="number" className={inputClass} value={data.photoCount || ''} onChange={(e) => setter('photoCount', e.target.value)} /></div>
-      <div><label className="text-xs text-gray-500 mb-1 block">מספר לוקיישנים</label>
-        <input type="number" className={inputClass} value={data.locationCount || ''} onChange={(e) => setter('locationCount', e.target.value)} /></div>
-      <div className="col-span-2 flex items-center gap-2">
-        <label className="text-xs text-gray-500">כולל אלבום</label>
-        <Toggle label="החלף כולל אלבום" checked={data.includesAlbum}
+    <div className="grid grid-cols-2 gap-4 mt-3">
+      <Field label="שם חבילה">
+        <input className={inputClass()} value={data.name || ''} onChange={(e) => setter('name', e.target.value)} /></Field>
+      <Field label="מחיר (₪)">
+        <input type="number" className={inputClass()} value={data.price || ''} onChange={(e) => setter('price', e.target.value)} /></Field>
+      <Field label="מספר תמונות">
+        <input type="number" className={inputClass()} value={data.photoCount || ''} onChange={(e) => setter('photoCount', e.target.value)} /></Field>
+      <Field label="מספר לוקיישנים">
+        <input type="number" className={inputClass()} value={data.locationCount || ''} onChange={(e) => setter('locationCount', e.target.value)} /></Field>
+      <div className="col-span-2">
+        <Toggle text="כולל אלבום" label="החלף כולל אלבום" checked={data.includesAlbum}
           onChange={(v) => setter('includesAlbum', v)} />
       </div>
       {data.includesAlbum && (
         <>
-          <div><label className="text-xs text-gray-500 mb-1 block">גודל אלבום</label>
-            <input className={inputClass} value={data.albumSize || ''} onChange={(e) => setter('albumSize', e.target.value)} placeholder="30x30" /></div>
-          <div><label className="text-xs text-gray-500 mb-1 block">עמודים</label>
-            <input type="number" className={inputClass} value={data.albumPages || ''} onChange={(e) => setter('albumPages', e.target.value)} /></div>
+          <Field label="גודל אלבום">
+            <input className={inputClass()} value={data.albumSize || ''} onChange={(e) => setter('albumSize', e.target.value)} placeholder="30x30" /></Field>
+          <Field label="מספר עמודים">
+            <input type="number" className={inputClass()} value={data.albumPages || ''} onChange={(e) => setter('albumPages', e.target.value)} /></Field>
         </>
       )}
     </div>
@@ -200,26 +199,25 @@ function PackagesTab() {
 
   return (
     <div>
-      <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-1">בחר סוג צילום</label>
-        <select className={inputClass} value={selectedTypeId} onChange={(e) => setSelectedTypeId(e.target.value)}>
+      <Field label="בחר סוג צילום" className="mb-6">
+        <select className={inputClass()} value={selectedTypeId} onChange={(e) => setSelectedTypeId(e.target.value)}>
           <option value="">בחר...</option>
           {types.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
         </select>
-      </div>
+      </Field>
 
       {selectedTypeId && (
         <>
           <div className="space-y-3 mb-4">
             {packages.map((p) => (
-              <div key={p.id} className="bg-white border border-gray-100 rounded-xl p-4">
+              <div key={p.id} className={`${itemClass} p-4`}>
                 {editId === p.id ? (
                   <>
                     <PkgFields data={editData} setter={setE} />
-                    <div className="flex gap-2 mt-3 justify-start">
-                      <button onClick={() => setEditId(null)} className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-600 hover:bg-gray-50">בטל</button>
-                      <button onClick={handleUpdate} className="text-sm bg-gray-900 text-white rounded-lg px-3 py-1.5 hover:bg-gray-700">שמור</button>
-                    </div>
+                    <ModalActions>
+                      <Button variant="secondary" onClick={() => setEditId(null)}>בטל</Button>
+                      <Button onClick={handleUpdate}>שמור</Button>
+                    </ModalActions>
                   </>
                 ) : (
                   <div className="flex items-center justify-between">
@@ -230,9 +228,9 @@ function PackagesTab() {
                         {p.includesAlbum && ` · אלבום ${p.albumSize}`}
                       </p>
                     </div>
-                    <div className="flex gap-2">
-                      <button aria-label="ערוך" onClick={() => { setEditId(p.id); setEditData({ ...p }) }} className="text-gray-400 hover:text-gray-700"><Edit2 className="w-4 h-4" /></button>
-                      <button aria-label="מחק" onClick={() => setDeleteTarget(p)} className="text-gray-400 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
+                    <div className="flex gap-1">
+                      <IconButton label="ערוך" onClick={() => { setEditId(p.id); setEditData({ ...p }) }}><Edit2 className="w-4 h-4" /></IconButton>
+                      <IconButton label="מחק" variant="danger" onClick={() => setDeleteTarget(p)}><Trash2 className="w-4 h-4" /></IconButton>
                     </div>
                   </div>
                 )}
@@ -241,13 +239,13 @@ function PackagesTab() {
           </div>
 
           {showNew ? (
-            <div className="bg-white border border-gray-200 rounded-xl p-4">
+            <div className={`${itemClass} p-4`}>
               <p className="text-sm font-medium text-gray-800 mb-1">חבילה חדשה</p>
               <PkgFields data={newPkg} setter={setN} />
-              <div className="flex gap-2 mt-3 justify-start">
-                <button onClick={() => setShowNew(false)} className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 text-gray-600 hover:bg-gray-50">בטל</button>
-                <button onClick={handleCreate} className="text-sm bg-gray-900 text-white rounded-lg px-3 py-1.5 hover:bg-gray-700">הוסף חבילה</button>
-              </div>
+              <ModalActions>
+                <Button variant="secondary" onClick={() => setShowNew(false)}>בטל</Button>
+                <Button onClick={handleCreate}>הוסף חבילה</Button>
+              </ModalActions>
             </div>
           ) : (
             <button onClick={() => setShowNew(true)}

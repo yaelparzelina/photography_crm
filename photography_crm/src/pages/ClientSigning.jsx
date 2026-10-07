@@ -5,6 +5,9 @@ import { db } from '../firebase'
 import AgreementTemplate from '../templates/AgreementTemplate'
 import PublicLayout from '../components/layout/PublicLayout'
 import SignaturePad from '../components/SignaturePad'
+import Button from '../components/ui/Button'
+import Field from '../components/ui/Field'
+import { inputClass, cardClass } from '../components/ui/styles'
 
 const AGREEMENT_FIELDS = [
   'clientName', 'photoshootTypeName', 'packageName', 'shootDate', 'price',
@@ -77,7 +80,7 @@ export default function ClientSigning() {
   if (loading) return <PublicLayout><div className="text-center py-20 text-gray-400">טוען...</div></PublicLayout>
   if (!link || !link.active) return (
     <PublicLayout>
-      <div className="text-center py-20 bg-white rounded-2xl border border-gray-100 shadow-sm">
+      <div className={`${cardClass} text-center py-20`}>
         <p className="text-gray-600 text-sm">קישור זה אינו פעיל יותר.</p>
         <p className="text-gray-400 text-xs mt-1">אנא צור קשר עם הצלמת.</p>
       </div>
@@ -85,7 +88,7 @@ export default function ClientSigning() {
   )
   if (success) return (
     <PublicLayout>
-      <div className="text-center py-20 bg-white rounded-2xl border border-gray-100 shadow-sm">
+      <div className={`${cardClass} text-center py-20`}>
         <div className="text-5xl mb-4">✓</div>
         <h2 className="text-xl font-semibold text-gray-900 mb-2">תודה!</h2>
         <p className="text-gray-500 text-sm">ההסכם אושר בהצלחה. נהיה בקשר.</p>
@@ -95,36 +98,26 @@ export default function ClientSigning() {
 
   return (
     <PublicLayout>
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className={`${cardClass} overflow-hidden`}>
         <div ref={agreementRef}>
           <AgreementTemplate link={link} />
         </div>
         <div className="px-8 pb-8 pt-4 border-t border-gray-100">
           <h3 className="font-semibold text-gray-900 mb-4 text-base">אישור ההסכם</h3>
           <form onSubmit={handleSubmit} noValidate className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                כתובת המייל שלך — לאישור ההסכם ולמשלוח עדכונים
-              </label>
+            <Field label="כתובת המייל שלך — לאישור ההסכם ולמשלוח עדכונים" error={emailError}>
               <input type="email" value={email}
                 onChange={(e) => { setEmail(e.target.value); setEmailError('') }}
-                placeholder="your@email.com"
-                className={`w-full border rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300 ${emailError ? 'border-red-400' : 'border-gray-200'}`} />
-              {emailError && <p className="text-red-600 text-xs mt-1">{emailError}</p>}
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                חתימה — בחתימתי אני מאשר/ת שקראתי את תנאי ההסכם ואני מסכים/ה להם
-              </label>
+                placeholder="your@email.com" className={inputClass(!!emailError)} />
+            </Field>
+            <Field label="חתימה — בחתימתי אני מאשר/ת שקראתי את תנאי ההסכם ואני מסכים/ה להם" error={signatureError}>
               <SignaturePad hasError={!!signatureError}
                 onChange={(data) => { setSignature(data); setSignatureError('') }} />
-              {signatureError && <p className="text-red-600 text-xs mt-1">{signatureError}</p>}
-            </div>
+            </Field>
             {submitError && <p className="text-red-600 text-sm">{submitError}</p>}
-            <button type="submit" disabled={submitting}
-              className="w-full bg-gray-900 text-white rounded-lg py-3 text-sm font-medium hover:bg-gray-700 disabled:opacity-50 transition-colors">
+            <Button type="submit" size="lg" fullWidth disabled={submitting}>
               {submitting ? 'שולח...' : 'אני מאשר/ת את ההסכם'}
-            </button>
+            </Button>
           </form>
         </div>
       </div>

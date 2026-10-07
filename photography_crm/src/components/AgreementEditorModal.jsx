@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react'
-import Modal from './ui/Modal'
+import Modal, { ModalActions } from './ui/Modal'
+import Button from './ui/Button'
+import Field from './ui/Field'
+import CopyLink from './ui/CopyLink'
+import { inputClass } from './ui/styles'
 import ConfirmDialog from './ui/ConfirmDialog'
 import Toggle from './ui/Toggle'
 import { useLinks } from '../hooks/useLinks'
 import AgreementTemplate from '../templates/AgreementTemplate'
 import { toInputDate, fromInputDate } from '../utils/dateUtils'
-import { Copy, Check } from 'lucide-react'
 import { getClientName } from '../utils/clientUtils'
-
-const inputClass = 'w-full border border-gray-200 rounded-lg ps-4 pe-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-300'
 
 export default function AgreementEditorModal({ isOpen, onClose, client, packages, types, onLinkCreated }) {
   const { createAgreementLink } = useLinks()
@@ -16,7 +17,6 @@ export default function AgreementEditorModal({ isOpen, onClose, client, packages
   const [generatedLinkId, setGeneratedLinkId] = useState(null)
   const [showRegenWarning, setShowRegenWarning] = useState(false)
   const [generating, setGenerating] = useState(false)
-  const [copied, setCopied] = useState(false)
   const [shootDateError, setShootDateError] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
 
@@ -88,13 +88,10 @@ export default function AgreementEditorModal({ isOpen, onClose, client, packages
         ) : generatedLinkId ? (
           <div className="space-y-3">
             <p className="text-sm text-green-700 font-medium">✓ הקישור נוצר בהצלחה</p>
-            <input readOnly value={agreementUrl(generatedLinkId)}
-              className="w-full text-xs border border-gray-200 rounded-lg ps-3 pe-3 py-2 bg-gray-50 text-gray-600" />
-            <button onClick={() => { navigator.clipboard.writeText(agreementUrl(generatedLinkId)); setCopied(true); setTimeout(() => setCopied(false), 2000) }}
-              className="flex items-center gap-1.5 text-sm text-gray-700 border border-gray-200 rounded-lg px-4 py-2 hover:bg-gray-50">
-              {copied ? <><Check className="w-4 h-4 text-green-600" /> הועתק!</> : <><Copy className="w-4 h-4" /> העתק קישור</>}
-            </button>
-            <button onClick={onClose} className="w-full text-sm text-gray-500 hover:text-gray-700 pt-1">סגור</button>
+            <CopyLink url={agreementUrl(generatedLinkId)} />
+            <ModalActions>
+              <Button variant="secondary" onClick={onClose}>סגור</Button>
+            </ModalActions>
           </div>
         ) : (
           <div className="space-y-4">
@@ -105,54 +102,40 @@ export default function AgreementEditorModal({ isOpen, onClose, client, packages
               <p><span className="font-medium">מחיר:</span> ₪{client.price?.toLocaleString() || '—'}</p>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">תאריך צילום *</label>
-              <input type="date"
-                className={`${inputClass} ${shootDateError ? 'border-red-400' : ''}`}
+            <Field label="תאריך צילום *" error={shootDateError && 'נדרש תאריך צילום ליצירת ההסכם'}>
+              <input type="date" className={inputClass(shootDateError)}
                 value={overrides.shootDate ? toInputDate(overrides.shootDate) : ''}
                 onChange={(e) => { set('shootDate', fromInputDate(e.target.value)); setShootDateError(false) }} />
-              {shootDateError && <p className="text-red-600 text-xs mt-1">נדרש תאריך צילום ליצירת ההסכם</p>}
-            </div>
+            </Field>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">מספר תמונות ערוכות</label>
-              <input type="number" className={inputClass} value={overrides.photoCount ?? ''}
+            <Field label="מספר תמונות ערוכות">
+              <input type="number" className={inputClass()} value={overrides.photoCount ?? ''}
                 onChange={(e) => set('photoCount', Number(e.target.value))} />
-            </div>
+            </Field>
 
-            <div className="flex items-center gap-3">
-              <label className="text-sm font-medium text-gray-700">כולל אלבום מודפס</label>
-              <Toggle label="החלף כולל אלבום" checked={overrides.includesAlbum}
-                onChange={(v) => set('includesAlbum', v)} />
-            </div>
+            <Toggle text="כולל אלבום" label="החלף כולל אלבום" checked={overrides.includesAlbum}
+              onChange={(v) => set('includesAlbum', v)} />
 
             {overrides.includesAlbum && (
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">גודל אלבום</label>
-                  <input className={inputClass} value={overrides.albumSize || ''}
+              <div className="grid grid-cols-2 gap-4">
+                <Field label="גודל אלבום">
+                  <input className={inputClass()} value={overrides.albumSize || ''}
                     onChange={(e) => set('albumSize', e.target.value)} placeholder="30x30" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">מספר עמודים</label>
-                  <input type="number" className={inputClass} value={overrides.albumPages || ''}
+                </Field>
+                <Field label="מספר עמודים">
+                  <input type="number" className={inputClass()} value={overrides.albumPages || ''}
                     onChange={(e) => set('albumPages', Number(e.target.value))} />
-                </div>
+                </Field>
               </div>
             )}
 
-            <div className="flex gap-3 pt-2 justify-start">
-              <button onClick={onClose}
-                className="px-4 py-2 text-sm border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50">בטל</button>
-              <button onClick={() => setShowPreview(true)}
-                className="px-4 py-2 text-sm border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50">
-                תצוגה מקדימה
-              </button>
-              <button onClick={handleGenerate} disabled={generating}
-                className="px-4 py-2 text-sm bg-gray-900 text-white rounded-lg hover:bg-gray-700 disabled:opacity-50">
+            <ModalActions>
+              <Button variant="secondary" onClick={onClose}>בטל</Button>
+              <Button variant="secondary" onClick={() => setShowPreview(true)}>תצוגה מקדימה</Button>
+              <Button onClick={handleGenerate} disabled={generating}>
                 {generating ? 'יוצר...' : 'צור קישור'}
-              </button>
-            </div>
+              </Button>
+            </ModalActions>
           </div>
         )}
       </Modal>
