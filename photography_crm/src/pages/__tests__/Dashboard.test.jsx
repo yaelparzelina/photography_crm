@@ -191,6 +191,24 @@ describe('Dashboard', () => {
     expect(screen.queryByText('דנה לוי')).not.toBeInTheDocument()
   })
 
+  it('status menu opens upwards for a row at the bottom of the screen, downwards otherwise', () => {
+    renderDashboard()
+    const badge = screen.getAllByRole('button', { name: /ליד חדש/ })[0]
+    badge.getBoundingClientRect = () => ({ top: window.innerHeight - 30, bottom: window.innerHeight - 6, right: 500, left: 400 })
+    fireEvent.click(badge)
+    let menu = screen.getByRole('menu')
+    expect(menu.style.bottom).not.toBe('')
+    expect(menu.style.top).toBe('')
+    fireEvent.click(badge)
+
+    badge.getBoundingClientRect = () => ({ top: 100, bottom: 124, right: 500, left: 400 })
+    fireEvent.click(badge)
+    menu = screen.getByRole('menu')
+    expect(menu.style.top).toBe('128px')
+    fireEvent.scroll(window)
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+  })
+
   it('clicking a row navigates to /dashboard/clients/:id', () => {
     renderDashboard()
     fireEvent.click(screen.getByText('ישראל ישראלי'))

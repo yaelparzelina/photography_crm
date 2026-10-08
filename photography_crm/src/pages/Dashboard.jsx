@@ -12,6 +12,9 @@ import { formatDate } from '../utils/dateUtils'
 import { STATUS_CONFIG, STATUS_OPTIONS } from '../utils/statusConfig'
 import { getClientName } from '../utils/clientUtils'
 
+const MENU_GAP = 12 // keep this much space from the screen edge
+const MENU_HEIGHT = STATUS_OPTIONS.length * 32 + 10 // approximate menu height
+
 function StatusSelect({ status, onUpdate }) {
   const [open, setOpen] = useState(false)
   const [pos, setPos] = useState({ top: 0, right: 0 })
@@ -27,15 +30,35 @@ function StatusSelect({ status, onUpdate }) {
         dropRef.current && !dropRef.current.contains(e.target)
       ) setOpen(false)
     }
+    // The menu is fixed to the screen, so close it when the page scrolls or resizes
+    function handleScroll(e) {
+      if (e.target instanceof Node && dropRef.current?.contains(e.target)) return
+      setOpen(false)
+    }
+    function close() { setOpen(false) }
     document.addEventListener('mousedown', handleOutside)
-    return () => document.removeEventListener('mousedown', handleOutside)
+    window.addEventListener('scroll', handleScroll, true)
+    window.addEventListener('resize', close)
+    return () => {
+      document.removeEventListener('mousedown', handleOutside)
+      window.removeEventListener('scroll', handleScroll, true)
+      window.removeEventListener('resize', close)
+    }
   }, [open])
 
   function handleOpen(e) {
     e.stopPropagation()
     if (!open) {
       const rect = btnRef.current.getBoundingClientRect()
-      setPos({ top: rect.bottom + 4, right: window.innerWidth - rect.right })
+      const right = window.innerWidth - rect.right
+      const spaceBelow = window.innerHeight - rect.bottom - MENU_GAP
+      const spaceAbove = rect.top - MENU_GAP
+      // Open upwards when the menu doesn't fit below the button and there's more room above
+      if (spaceBelow < MENU_HEIGHT && spaceAbove > spaceBelow) {
+        setPos({ bottom: window.innerHeight - rect.top + 4, right, maxHeight: spaceAbove })
+      } else {
+        setPos({ top: rect.bottom + 4, right, maxHeight: spaceBelow })
+      }
     }
     setOpen((o) => !o)
   }
@@ -49,8 +72,8 @@ function StatusSelect({ status, onUpdate }) {
         <ChevronDown className="w-3 h-3 opacity-70" />
       </button>
       {open && createPortal(
-        <div ref={dropRef} style={{ position: 'fixed', top: pos.top, right: pos.right, zIndex: 9999 }}
-          className="bg-white border border-gray-200 rounded-xl shadow-lg py-1 min-w-max">
+        <div ref={dropRef} role="menu" style={{ position: 'fixed', ...pos, zIndex: 9999 }}
+          className="bg-white border border-gray-200 rounded-xl shadow-lg py-1 min-w-max overflow-y-auto">
           {STATUS_OPTIONS.map((o) => (
             <button key={o.value}
               onClick={(e) => { e.stopPropagation(); onUpdate(o.value); setOpen(false) }}
