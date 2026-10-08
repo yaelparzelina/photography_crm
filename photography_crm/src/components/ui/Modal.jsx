@@ -3,7 +3,8 @@ import { X } from 'lucide-react'
 import IconButton from './IconButton'
 import { backdropClass } from './styles'
 
-export default function Modal({ isOpen, onClose, title, children, maxWidth = 'max-w-lg' }) {
+// `footer` stays pinned to the bottom of the dialog while the content scrolls.
+export default function Modal({ isOpen, onClose, title, children, footer, maxWidth = 'max-w-lg' }) {
   useEffect(() => {
     if (!isOpen) return
     const handleKey = (e) => { if (e.key === 'Escape') onClose() }
@@ -29,6 +30,11 @@ export default function Modal({ isOpen, onClose, title, children, maxWidth = 'ma
           <IconButton label="סגור" onClick={onClose}><X className="w-5 h-5" /></IconButton>
         </div>
         <div className="p-6">{children}</div>
+        {footer && (
+          <div className="sticky bottom-0 z-10 bg-white rounded-b-2xl px-6 py-4 border-t border-gray-100 [&>*]:pt-0">
+            {footer}
+          </div>
+        )}
       </div>
     </div>
   )

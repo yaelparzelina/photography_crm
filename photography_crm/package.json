@@ -11,6 +11,7 @@
     "test:run": "vitest run"
   },
   "dependencies": {
+    "emoji-picker-element": "^1.29.1",
     "firebase": "^10.14.1",
     "lucide-react": "^1.14.0",
     "react": "^18.3.1",

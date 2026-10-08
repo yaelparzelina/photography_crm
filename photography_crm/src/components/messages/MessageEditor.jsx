@@ -1,7 +1,10 @@
 import { useState, useRef, useEffect } from 'react'
-import { Bold } from 'lucide-react'
+import { Bold, Undo2, Redo2 } from 'lucide-react'
 import Modal, { ModalActions } from '../ui/Modal'
 import Button from '../ui/Button'
+import IconButton from '../ui/IconButton'
+import EmojiPickerButton from './EmojiPickerButton'
+import { useUndoableText } from '../../hooks/useUndoableText'
 import Field from '../ui/Field'
 import Toggle from '../ui/Toggle'
 import { inputClass } from '../ui/styles'
@@ -13,6 +16,7 @@ const EMPTY = { title: '', hasGender: false, hasAlbum: false, variants: { f_base
 
 function VariantTextarea({ label, value, onChange }) {
   const ref = useRef(null)
+  const history = useUndoableText(value, onChange)
 
   // Inserts text at the cursor, or wraps the selection (for bold)
   function insert(before, after = '') {
@@ -20,7 +24,7 @@ function VariantTextarea({ label, value, onChange }) {
     const start = el?.selectionStart ?? value.length
     const end = el?.selectionEnd ?? value.length
     const next = value.slice(0, start) + before + value.slice(start, end) + after + value.slice(end)
-    onChange(next)
+    history.change(next)
     requestAnimationFrame(() => {
       if (!el) return
       el.focus()
@@ -35,14 +39,20 @@ function VariantTextarea({ label, value, onChange }) {
         <Button variant="secondary" size="sm" onClick={() => insert(BLANK)}>___ שדה למילוי</Button>
         <Button variant="secondary" size="sm" onClick={() => insert(NAME_TOKEN)}>{NAME_TOKEN} שם הלקוח</Button>
         <Button variant="secondary" size="sm" onClick={() => insert('*', '*')}><Bold className="w-3.5 h-3.5" /> הדגשה</Button>
-        <span className="flex flex-wrap gap-0.5 ms-1">
+        <EmojiPickerButton onPick={(emoji) => insert(emoji)} />
+        <span className="flex items-center ms-auto">
+          <IconButton label="בטל פעולה (Ctrl+Z)" onClick={history.undo}><Undo2 className="w-4 h-4" /></IconButton>
+          <IconButton label="בצע שוב (Ctrl+Y)" onClick={history.redo}><Redo2 className="w-4 h-4" /></IconButton>
+        </span>
+        <span className="flex flex-wrap gap-0.5 basis-full">
           {QUICK_EMOJIS.map((e) => (
             <button key={e} type="button" onClick={() => insert(e)} aria-label={`הוסף ${e}`}
               className="w-7 h-7 rounded-md text-base hover:bg-gray-100">{e}</button>
           ))}
         </span>
       </div>
-      <textarea ref={ref} rows={10} dir="rtl" value={value} onChange={(e) => onChange(e.target.value)}
+      <textarea ref={ref} rows={10} dir="rtl" value={value}
+        onChange={(e) => history.change(e.target.value, { group: true })} onKeyDown={history.onKeyDown}
         className={`${inputClass()} leading-relaxed`} />
     </Field>
   )
@@ -86,7 +96,13 @@ export default function MessageEditor({ isOpen, template, onClose, onSave }) {
   const keys = variantKeys(draft.hasGender, draft.hasAlbum)
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={template ? 'עריכת הודעה' : 'הודעה חדשה'} maxWidth="max-w-3xl">
+    <Modal isOpen={isOpen} onClose={onClose} title={template ? 'עריכת הודעה' : 'הודעה חדשה'} maxWidth="max-w-3xl"
+      footer={
+        <ModalActions>
+          <Button variant="secondary" onClick={onClose}>בטל</Button>
+          <Button onClick={handleSave} disabled={saving}>{saving ? 'שומר...' : 'שמור'}</Button>
+        </ModalActions>
+      }>
       <div className="space-y-5">
         <Field label="כותרת (לא מועתקת)" error={error}>
           <input className={inputClass(!!error)} value={draft.title}
@@ -100,7 +116,7 @@ export default function MessageEditor({ isOpen, template, onClose, onSave }) {
 
         <p className="text-xs text-gray-500 leading-relaxed">
           ___ = שדה למילוי ידני · {NAME_TOKEN} = שם הלקוח (מתמלא אוטומטית מכרטיס הלקוח) · *טקסט* = מודגש בוואטסאפ ·
-          קישורים: מדביקים את הכתובת המלאה (https://...) · לכל האימוג׳ים במחשב: מקש Windows + נקודה
+          קישורים: מדביקים את הכתובת המלאה (https://...) · Ctrl+Z / Ctrl+Y לביטול ושחזור
         </p>
 
         {keys.map((k) => (
@@ -108,11 +124,6 @@ export default function MessageEditor({ isOpen, template, onClose, onSave }) {
             value={draft.variants[k] || ''}
             onChange={(v) => setDraft((d) => ({ ...d, variants: { ...d.variants, [k]: v } }))} />
         ))}
-
-        <ModalActions>
-          <Button variant="secondary" onClick={onClose}>בטל</Button>
-          <Button onClick={handleSave} disabled={saving}>{saving ? 'שומר...' : 'שמור הודעה'}</Button>
-        </ModalActions>
       </div>
     </Modal>
   )
