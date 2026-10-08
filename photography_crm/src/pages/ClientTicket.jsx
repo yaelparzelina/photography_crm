@@ -15,6 +15,7 @@ import ProposalTemplate from '../templates/ProposalTemplate'
 import SignedAgreementDocument from '../components/SignedAgreementDocument'
 import DisabledHint from '../components/ui/DisabledHint'
 import Toggle from '../components/ui/Toggle'
+import Segmented from '../components/ui/Segmented'
 import AlbumFields from '../components/AlbumFields'
 import { normalizeAlbum } from '../utils/album'
 import Button from '../components/ui/Button'
@@ -26,7 +27,7 @@ import { printElement } from '../utils/printDocument'
 import { STATUS_OPTIONS } from '../utils/statusConfig'
 import { getClientName, signedDocumentTitle } from '../utils/clientUtils'
 import { formatDate, toInputDate, fromInputDate } from '../utils/dateUtils'
-import { ArrowRight, Trash2, FileText, Eye, Download } from 'lucide-react'
+import { ArrowRight, Trash2, FileText, Eye, Download, MessageCircle } from 'lucide-react'
 
 
 function normalizeClientData(data) {
@@ -198,6 +199,21 @@ export default function ClientTicket() {
     }
   }
 
+  // Opens the messages page prefilled from what's currently on the card (saved or not)
+  function openMessages() {
+    navigate('/dashboard/messages', {
+      state: {
+        client: {
+          id,
+          firstName: form.firstName || '',
+          fullName: getClientName(form),
+          gender: form.gender === 'male' ? 'male' : 'female',
+          includesAlbum: !!albumData.includesAlbum,
+        },
+      },
+    })
+  }
+
   async function handleDelete() {
     try {
       await deleteClient(id)
@@ -241,7 +257,12 @@ export default function ClientTicket() {
 
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-semibold text-gray-900">{getClientName(client) || 'לקוח חדש'}</h1>
-        <StatusBadge status={form.status} />
+        <div className="flex items-center gap-3">
+          <Button variant="secondary" onClick={openMessages}>
+            <MessageCircle className="w-4 h-4" /> הודעות ללקוח
+          </Button>
+          <StatusBadge status={form.status} />
+        </div>
       </div>
 
       <Card title="סטטוס" className="mb-4">
@@ -270,6 +291,13 @@ export default function ClientTicket() {
             <input type="date" max="9999-12-31" className={inputClass()}
               value={form.dateOfBirth ? toInputDate(form.dateOfBirth) : ''}
               onChange={(e) => set('dateOfBirth', fromInputDate(e.target.value))} />
+          </Field>
+          <Field label="פנייה בלשון">
+            <div className="flex items-center min-h-[42px]">
+              <Segmented label="פנייה בלשון" value={form.gender === 'male' ? 'male' : 'female'}
+                options={[{ value: 'female', label: 'נקבה' }, { value: 'male', label: 'זכר' }]}
+                onChange={(v) => set('gender', v)} />
+            </div>
           </Field>
         </div>
       </Card>

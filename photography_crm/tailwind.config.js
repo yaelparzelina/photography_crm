@@ -3,7 +3,7 @@ export default {
   content: ['./index.html', './src/**/*.{js,jsx}'],
   theme: {
     extend: {
-      fontFamily: { sans: ['Heebo', 'sans-serif'] },
+      fontFamily: { sans: ['Heebo', 'Noto Color Emoji', 'sans-serif'] },
     },
   },
   plugins: [],

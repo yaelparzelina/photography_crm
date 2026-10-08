@@ -9,6 +9,7 @@ vi.mock('../firebase', () => ({ db: {}, auth: {} }))
 
 const data = vi.hoisted(() => ({
   photoshootTypes: [{ id: 'type1', name: 'בת מצווה', order: 0 }],
+  messageTemplates: [],
   packages: [
     { id: 'pkg1', name: 'קלאסית', photoshootTypeId: 'type1', order: 0, photoCount: 30, price: 1500, includesAlbum: false },
     { id: 'pkg2', name: 'פרימיום', photoshootTypeId: 'type1', order: 1, photoCount: 80, price: 3500, includesAlbum: true, albumSize: '30x30', albumPages: 20 },
@@ -42,7 +43,7 @@ vi.mock('firebase/firestore', () => ({
     }
     return () => {}
   },
-  getDoc: vi.fn(), getDocs: vi.fn(), addDoc: vi.fn(), setDoc: vi.fn(), updateDoc: vi.fn(() => Promise.resolve()),
+  getDoc: vi.fn(() => Promise.resolve({ exists: () => true })), getDocs: vi.fn(), addDoc: vi.fn(), setDoc: vi.fn(), updateDoc: vi.fn(() => Promise.resolve()),
   deleteDoc: vi.fn(), serverTimestamp: vi.fn(), writeBatch: vi.fn(),
 }))
 
@@ -57,6 +58,7 @@ vi.mock('react-firebase-hooks/firestore', () => ({
 vi.mock('react-firebase-hooks/auth', () => ({ useAuthState: () => [{ uid: 'u1', email: 'owner@example.com' }, false] }))
 vi.mock('firebase/auth', () => ({ signOut: vi.fn(), signInWithEmailAndPassword: vi.fn() }))
 
+import { DEFAULT_TEMPLATES } from '../utils/messageTemplate'
 import { AuthProvider } from '../context/AuthContext'
 import App from '../App'
 
@@ -103,6 +105,20 @@ describe('App smoke (logged in)', () => {
     renderAt('/dashboard/clients/c2')
     expect(screen.getByText('תאריך אירוע')).toBeInTheDocument()
     delete data.clients[1].shootDate
+  })
+
+  it('messages page shows templates; opening from a client prefills name, gender and album', () => {
+    data.messageTemplates = DEFAULT_TEMPLATES.map((t, i) => ({ id: `m${i}`, order: i, ...t }))
+    data.clients[1].gender = 'male'
+    renderAt('/dashboard/clients/c2')
+    fireEvent.click(screen.getByRole('button', { name: /הודעות ללקוח/ }))
+    expect(screen.getByRole('heading', { name: 'הודעות ללקוח' })).toBeInTheDocument()
+    expect(screen.getByText('התמונות מוכנות')).toBeInTheDocument()
+    expect(screen.getAllByLabelText('שם הלקוח')[0]).toHaveValue('דנה')
+    expect(screen.getByText(/רשום לי בבקשה/)).toBeInTheDocument()
+    expect(screen.getByText(/פונה אליך/)).toBeInTheDocument()
+    delete data.clients[1].gender
+    data.messageTemplates = []
   })
 
   it('settings packages tab renders and edits a package', () => {

@@ -1,7 +1,7 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { signOut } from 'firebase/auth'
 import { auth } from '../../firebase'
-import { Camera, Users, Settings, LogOut } from 'lucide-react'
+import { Camera, Users, Settings, LogOut, MessageCircle } from 'lucide-react'
 
 const navLinkClass = ({ isActive }) =>
   `flex items-center gap-1.5 text-sm transition-colors ${
@@ -31,6 +31,9 @@ export default function DashboardLayout() {
         <div className="flex items-center gap-5">
           <NavLink to="/dashboard" end className={navLinkClass}>
             <Users className="w-4 h-4" /> לקוחות
+          </NavLink>
+          <NavLink to="/dashboard/messages" className={navLinkClass}>
+            <MessageCircle className="w-4 h-4" /> הודעות ללקוח
           </NavLink>
           <NavLink to="/dashboard/settings" className={navLinkClass}>
             <Settings className="w-4 h-4" /> הגדרות

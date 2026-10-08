@@ -5,6 +5,7 @@ import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import ClientTicket from './pages/ClientTicket'
 import Settings from './pages/Settings'
+import Messages from './pages/Messages'
 import ClientProposal from './pages/ClientProposal'
 import ClientSigning from './pages/ClientSigning'
 
@@ -18,6 +19,7 @@ export default function App() {
         <Route path="/dashboard/*" element={<DashboardLayout />}>
           <Route index element={<Dashboard />} />
           <Route path="clients/:id" element={<ClientTicket />} />
+          <Route path="messages" element={<Messages />} />
           <Route path="settings" element={<Settings />} />
         </Route>
       </Route>
