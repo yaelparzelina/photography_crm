@@ -306,7 +306,7 @@ export default function ClientTicket() {
             <input type="number" className={inputClass()} value={form.price ?? ''}
               onChange={(e) => set('price', e.target.value ? Number(e.target.value) : null)} />
           </Field>
-          <div className="pt-2">
+          <div className="sm:self-end flex items-center min-h-[42px]">
             <Toggle text="שילם מקדמה" checked={form.paidAdvance} onChange={(v) => set('paidAdvance', v)} />
           </div>
           <AlbumFields data={albumData} onChange={setAlbum} className="sm:col-span-2" />

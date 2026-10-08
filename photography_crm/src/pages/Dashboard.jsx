@@ -154,7 +154,7 @@ export default function Dashboard() {
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
           className="border border-gray-200 rounded-lg px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-300">
           <option value="all">כל הסטטוסים</option>
-          <option value="in_progress">בתהליך (ללא "לא סגר" ו"הסתיים")</option>
+          <option value="in_progress">כל התהליכים</option>
           {STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
         </select>
       </div>
