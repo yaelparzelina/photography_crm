@@ -77,9 +77,13 @@ export default function ClientTicket() {
   useEffect(() => {
     if (!dirty || !client) return
     try {
-      localStorage.setItem(`draft_${id}`, JSON.stringify(form, (_, val) => {
-        if (val && typeof val?.toDate === 'function') return { _t: val.toDate().toISOString() }
-        if (val instanceof Date) return { _t: val.toISOString() }
+      // Read the raw value: JSON.stringify turns Dates into strings before the replacer sees them
+      localStorage.setItem(`draft_${id}`, JSON.stringify(form, function (key, val) {
+        const raw = this[key]
+        if (raw instanceof Date || typeof raw?.toDate === 'function') {
+          const iso = toInputDate(raw)
+          return iso ? { _t: iso } : null
+        }
         return val
       }))
     } catch { /* ignore */ }
@@ -97,7 +101,7 @@ export default function ClientTicket() {
           if (raw) {
             try {
               const parsed = JSON.parse(raw, (_, val) => {
-                if (val && typeof val === 'object' && val._t) return new Date(val._t)
+                if (val && typeof val === 'object' && val._t) return fromInputDate(val._t)
                 return val
               })
               const { name: legacyName, ...draftRest } = parsed
@@ -263,7 +267,7 @@ export default function ClientTicket() {
             <input type="email" className={inputClass(!!emailError)} value={form.email || ''} onChange={(e) => set('email', e.target.value)} />
           </Field>
           <Field label="תאריך לידה">
-            <input type="date" className={inputClass()}
+            <input type="date" max="9999-12-31" className={inputClass()}
               value={form.dateOfBirth ? toInputDate(form.dateOfBirth) : ''}
               onChange={(e) => set('dateOfBirth', fromInputDate(e.target.value))} />
           </Field>
@@ -289,12 +293,12 @@ export default function ClientTicket() {
             </DisabledHint>
           </Field>
           <Field label="תאריך צילום">
-            <input type="date" className={inputClass()}
+            <input type="date" max="9999-12-31" className={inputClass()}
               value={form.shootDate ? toInputDate(form.shootDate) : ''}
               onChange={(e) => set('shootDate', fromInputDate(e.target.value))} />
           </Field>
           <Field label="תאריך אירוע">
-            <input type="date" className={inputClass()}
+            <input type="date" max="9999-12-31" className={inputClass()}
               value={form.eventDate ? toInputDate(form.eventDate) : ''}
               onChange={(e) => set('eventDate', fromInputDate(e.target.value))} />
           </Field>

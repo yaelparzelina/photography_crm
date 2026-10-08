@@ -107,7 +107,7 @@ export default function AgreementEditorModal({ isOpen, onClose, client, packages
             </div>
 
             <Field label="תאריך צילום *" error={shootDateError && 'נדרש תאריך צילום ליצירת ההסכם'}>
-              <input type="date" className={inputClass(shootDateError)}
+              <input type="date" max="9999-12-31" className={inputClass(shootDateError)}
                 value={overrides.shootDate ? toInputDate(overrides.shootDate) : ''}
                 onChange={(e) => { set('shootDate', fromInputDate(e.target.value)); setShootDateError(false) }} />
             </Field>

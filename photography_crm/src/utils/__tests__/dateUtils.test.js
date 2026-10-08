@@ -33,3 +33,17 @@ describe('fromInputDate', () => {
     expect(fromInputDate('')).toBeNull()
   })
 })
+
+describe('invalid dates never throw', () => {
+  const invalid = new Date(NaN)
+  it('toInputDate returns empty string', () => {
+    expect(toInputDate(invalid)).toBe('')
+    expect(toInputDate({ toDate: () => invalid })).toBe('')
+  })
+  it('formatDate returns empty string', () => {
+    expect(formatDate(invalid)).toBe('')
+  })
+  it('fromInputDate returns null for an impossible date', () => {
+    expect(fromInputDate('not-a-date')).toBeNull()
+  })
+})
