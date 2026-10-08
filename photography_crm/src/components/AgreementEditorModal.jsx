@@ -5,7 +5,8 @@ import Field from './ui/Field'
 import CopyLink from './ui/CopyLink'
 import { inputClass } from './ui/styles'
 import ConfirmDialog from './ui/ConfirmDialog'
-import Toggle from './ui/Toggle'
+import AlbumFields from './AlbumFields'
+import { normalizeAlbum } from '../utils/album'
 import { useLinks } from '../hooks/useLinks'
 import AgreementTemplate from '../templates/AgreementTemplate'
 import { toInputDate, fromInputDate } from '../utils/dateUtils'
@@ -25,11 +26,13 @@ export default function AgreementEditorModal({ isOpen, onClose, client, packages
 
   useEffect(() => {
     if (isOpen && pkg) {
+      // Album details come from the client card when set there, otherwise from the package
+      const albumSource = client?.includesAlbum != null ? client : pkg
       setOverrides({
         photoCount: pkg.photoCount,
-        includesAlbum: pkg.includesAlbum,
-        albumSize: pkg.albumSize || '',
-        albumPages: pkg.albumPages || '',
+        includesAlbum: !!albumSource.includesAlbum,
+        albumSize: albumSource.albumSize || '',
+        albumPages: albumSource.albumPages || '',
         shootDate: client?.shootDate || null,
       })
       setGeneratedLinkId(null)
@@ -58,6 +61,7 @@ export default function AgreementEditorModal({ isOpen, onClose, client, packages
   async function doGenerate() {
     setGenerating(true)
     try {
+      const album = normalizeAlbum(overrides)
       const snapshot = {
         clientName: getClientName(client),
         photoshootTypeName: type?.name || '',
@@ -65,13 +69,13 @@ export default function AgreementEditorModal({ isOpen, onClose, client, packages
         shootDate: overrides.shootDate || null,
         price: client.price || null,
         photoCount: overrides.photoCount,
-        includesAlbum: overrides.includesAlbum,
-        albumSize: overrides.includesAlbum ? overrides.albumSize : null,
-        albumPages: overrides.includesAlbum ? overrides.albumPages : null,
+        ...album,
       }
-      const linkId = await createAgreementLink(client.id, snapshot)
+      // Keep the client card in sync with what was put in the agreement
+      const clientUpdates = { shootDate: snapshot.shootDate, ...album }
+      const linkId = await createAgreementLink(client.id, snapshot, clientUpdates)
       setGeneratedLinkId(linkId)
-      onLinkCreated(linkId)
+      onLinkCreated(linkId, clientUpdates)
     } finally {
       setGenerating(false)
     }
@@ -113,21 +117,7 @@ export default function AgreementEditorModal({ isOpen, onClose, client, packages
                 onChange={(e) => set('photoCount', Number(e.target.value))} />
             </Field>
 
-            <Toggle text="כולל אלבום" label="החלף כולל אלבום" checked={overrides.includesAlbum}
-              onChange={(v) => set('includesAlbum', v)} />
-
-            {overrides.includesAlbum && (
-              <div className="grid grid-cols-2 gap-4">
-                <Field label="גודל אלבום">
-                  <input className={inputClass()} value={overrides.albumSize || ''}
-                    onChange={(e) => set('albumSize', e.target.value)} placeholder="30x30" />
-                </Field>
-                <Field label="מספר עמודים">
-                  <input type="number" className={inputClass()} value={overrides.albumPages || ''}
-                    onChange={(e) => set('albumPages', Number(e.target.value))} />
-                </Field>
-              </div>
-            )}
+            <AlbumFields data={overrides} onChange={set} />
 
             <ModalActions>
               <Button variant="secondary" onClick={onClose}>בטל</Button>
@@ -158,9 +148,7 @@ export default function AgreementEditorModal({ isOpen, onClose, client, packages
           shootDate: overrides.shootDate || null,
           price: client?.price || null,
           photoCount: overrides.photoCount,
-          includesAlbum: overrides.includesAlbum,
-          albumSize: overrides.albumSize,
-          albumPages: overrides.albumPages,
+          ...normalizeAlbum(overrides),
         }} />
       </Modal>
     </>

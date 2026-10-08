@@ -22,7 +22,7 @@ export function useLinks() {
     return linkId
   }
 
-  async function createAgreementLink(clientId, snapshot) {
+  async function createAgreementLink(clientId, snapshot, clientUpdates = {}) {
     await deactivateExisting(clientId, 'agreement')
     const linkId = generateLinkId()
     const batch = writeBatch(db)
@@ -30,7 +30,7 @@ export function useLinks() {
       clientId, type: 'agreement', active: true, ...snapshot, createdAt: serverTimestamp(),
     })
     batch.update(doc(db, 'clients', clientId), {
-      agreementSigned: false, agreementSignedAt: null, status: 'agreement_sent',
+      ...clientUpdates, agreementSigned: false, agreementSignedAt: null, status: 'agreement_sent',
     })
     await batch.commit()
     return linkId

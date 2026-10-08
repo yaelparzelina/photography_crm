@@ -15,6 +15,8 @@ import ProposalTemplate from '../templates/ProposalTemplate'
 import SignedAgreementDocument from '../components/SignedAgreementDocument'
 import DisabledHint from '../components/ui/DisabledHint'
 import Toggle from '../components/ui/Toggle'
+import AlbumFields from '../components/AlbumFields'
+import { normalizeAlbum } from '../utils/album'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 import Field from '../components/ui/Field'
@@ -125,6 +127,31 @@ export default function ClientTicket() {
     if (field === 'email') setEmailError('')
   }
 
+  function albumFromPackage(pkg) {
+    return {
+      includesAlbum: !!pkg?.includesAlbum,
+      albumSize: pkg?.albumSize || '',
+      albumPages: pkg?.albumPages || '',
+    }
+  }
+
+  function handlePackageChange(packageId) {
+    const pkg = packages.find((p) => p.id === packageId)
+    setForm((f) => ({ ...f, packageId, ...(pkg ? albumFromPackage(pkg) : {}) }))
+    setDirty(true)
+  }
+
+  // Clients saved before album details existed on the card show the package's album details
+  const selectedPackage = packages.find((p) => p.id === form.packageId)
+  const albumData = form.includesAlbum == null && selectedPackage
+    ? { ...form, ...albumFromPackage(selectedPackage) }
+    : form
+
+  function setAlbum(field, value) {
+    setForm((f) => ({ ...f, ...(f.includesAlbum == null ? albumFromPackage(selectedPackage) : {}), [field]: value }))
+    setDirty(true)
+  }
+
   function handleNavigateBack() {
     if (dirty) { setShowLeaveWarning(true) } else { navigate('/dashboard') }
   }
@@ -155,7 +182,9 @@ export default function ClientTicket() {
       await updateDoc(doc(db, 'clients', id), {
         ...rest,
         shootDate: form.shootDate || null,
+        eventDate: form.eventDate || null,
         dateOfBirth: form.dateOfBirth || null,
+        ...(albumData.includesAlbum != null ? normalizeAlbum(albumData) : {}),
       })
       localStorage.removeItem(`draft_${id}`)
       setDirty(false)
@@ -253,7 +282,7 @@ export default function ClientTicket() {
           <Field label="חבילה">
             <DisabledHint reason={needsTypeHint} className="block">
               <select className={`${inputClass()} disabled:pointer-events-none`} value={form.packageId || ''}
-                onChange={(e) => set('packageId', e.target.value)} disabled={!form.photoshootTypeId}>
+                onChange={(e) => handlePackageChange(e.target.value)} disabled={!form.photoshootTypeId}>
                 <option value="">בחר חבילה</option>
                 {packages.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
               </select>
@@ -264,6 +293,11 @@ export default function ClientTicket() {
               value={form.shootDate ? toInputDate(form.shootDate) : ''}
               onChange={(e) => set('shootDate', fromInputDate(e.target.value))} />
           </Field>
+          <Field label="תאריך אירוע">
+            <input type="date" className={inputClass()}
+              value={form.eventDate ? toInputDate(form.eventDate) : ''}
+              onChange={(e) => set('eventDate', fromInputDate(e.target.value))} />
+          </Field>
           <Field label="מחיר (₪)">
             <input type="number" className={inputClass()} value={form.price ?? ''}
               onChange={(e) => set('price', e.target.value ? Number(e.target.value) : null)} />
@@ -271,6 +305,7 @@ export default function ClientTicket() {
           <div className="pt-2">
             <Toggle text="שילם מקדמה" checked={form.paidAdvance} onChange={(v) => set('paidAdvance', v)} />
           </div>
+          <AlbumFields data={albumData} onChange={setAlbum} className="sm:col-span-2" />
         </div>
         <Field label="הערות" className="mt-4">
           <textarea rows={3} className={inputClass()} value={form.notes || ''}
@@ -394,7 +429,11 @@ export default function ClientTicket() {
         client={{ ...client, ...form }}
         packages={packages}
         types={types}
-        onLinkCreated={(linkId) => { setActiveLinkId(linkId); setShowAgreementEditor(false) }}
+        onLinkCreated={(linkId, synced) => {
+          setActiveLinkId(linkId)
+          setShowAgreementEditor(false)
+          setForm((f) => ({ ...f, ...synced }))
+        }}
       />
 
       <Modal isOpen={!!previewSignedDoc} onClose={() => setPreviewSignedDoc(null)}

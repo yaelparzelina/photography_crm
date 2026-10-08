@@ -135,10 +135,33 @@ describe('AgreementEditorModal', () => {
           packageName: 'חבילה בסיסית',
           photoCount: 50,
           includesAlbum: false,
-        })
+        }),
+        expect.anything()
       )
-      expect(onLinkCreated).toHaveBeenCalledWith('agreement-link-456')
+      expect(onLinkCreated).toHaveBeenCalledWith('agreement-link-456', expect.any(Object))
     })
+  })
+
+  it('syncs album details and shoot date back to the client, using album defaults when empty', async () => {
+    const onLinkCreated = vi.fn()
+    renderModal({ onLinkCreated })
+    fireEvent.click(screen.getByRole('switch', { name: /החלף כולל אלבום/ }))
+    fireEvent.click(screen.getByText('צור קישור'))
+    const expected = { includesAlbum: true, albumSize: '30x30', albumPages: 30 }
+    await waitFor(() => {
+      expect(mockCreateAgreementLink).toHaveBeenCalledWith(
+        'client-1',
+        expect.objectContaining(expected),
+        expect.objectContaining({ ...expected, shootDate: expect.any(Date) })
+      )
+      expect(onLinkCreated).toHaveBeenCalledWith('agreement-link-456', expect.objectContaining(expected))
+    })
+  })
+
+  it('uses album details from the client card when set there', () => {
+    renderModal({ client: { ...defaultClient, includesAlbum: true, albumSize: '40x40', albumPages: 24 } })
+    expect(screen.getByDisplayValue('40x40')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('24')).toBeInTheDocument()
   })
 
   it('shows shoot date error and blocks generation when shoot date is empty', async () => {
@@ -175,7 +198,7 @@ describe('AgreementEditorModal', () => {
     fireEvent.click(screen.getByText('המשך'))
     await waitFor(() => {
       expect(mockCreateAgreementLink).toHaveBeenCalled()
-      expect(onLinkCreated).toHaveBeenCalledWith('agreement-link-456')
+      expect(onLinkCreated).toHaveBeenCalledWith('agreement-link-456', expect.any(Object))
     })
   })
 

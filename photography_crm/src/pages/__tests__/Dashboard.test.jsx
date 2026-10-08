@@ -178,6 +178,19 @@ describe('Dashboard', () => {
     expect(screen.getByText('שרה כהן')).toBeInTheDocument()
   })
 
+  it('"in progress" filter hides done and didnt_book clients', () => {
+    mockUseClients.mockReturnValue({
+      clients: [...defaultClients, { ...defaultClients[0], id: 'client3', firstName: 'דנה', lastName: 'לוי', status: 'didnt_book' }],
+      loading: false,
+      updateClient: vi.fn(),
+    })
+    renderDashboard()
+    fireEvent.change(screen.getByDisplayValue('כל הסטטוסים'), { target: { value: 'in_progress' } })
+    expect(screen.getByText('ישראל ישראלי')).toBeInTheDocument()
+    expect(screen.queryByText('שרה כהן')).not.toBeInTheDocument()
+    expect(screen.queryByText('דנה לוי')).not.toBeInTheDocument()
+  })
+
   it('clicking a row navigates to /dashboard/clients/:id', () => {
     renderDashboard()
     fireEvent.click(screen.getByText('ישראל ישראלי'))

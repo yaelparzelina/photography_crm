@@ -133,6 +133,7 @@ function renderTicket() {
 describe('ClientTicket', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    localStorage.clear()
     mockDoc.mockReturnValue({})
     mockUpdateDoc.mockResolvedValue(undefined)
     mockDeleteClient.mockResolvedValue(undefined)
@@ -257,6 +258,41 @@ describe('ClientTicket', () => {
     expect(screen.getByText(/חוזה נחתם ב/)).toBeInTheDocument()
     expect(screen.getByText(/15\/06\/2024/)).toBeInTheDocument()
     expect(screen.getByText(/israel@example\.com/)).toBeInTheDocument()
+  })
+
+  it('has an optional event date field', () => {
+    setupOnSnapshot(makeSnapshot())
+    renderTicket()
+    expect(screen.getByText('תאריך אירוע')).toBeInTheDocument()
+  })
+
+  it('album toggle shows size and pages with defaults 30x30 / 30', () => {
+    setupOnSnapshot(makeSnapshot())
+    renderTicket()
+    expect(screen.queryByPlaceholderText('30x30')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('switch', { name: 'החלף כולל אלבום' }))
+    expect(screen.getByPlaceholderText('30x30')).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('30')).toBeInTheDocument()
+  })
+
+  it('saving with album and empty details stores the defaults', async () => {
+    setupOnSnapshot(makeSnapshot())
+    renderTicket()
+    fireEvent.click(screen.getByRole('switch', { name: 'החלף כולל אלבום' }))
+    fireEvent.click(screen.getByText('שמור שינויים'))
+    await waitFor(() => {
+      expect(mockUpdateDoc).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+        includesAlbum: true, albumSize: '30x30', albumPages: 30,
+      }))
+    })
+  })
+
+  it('selecting a package copies its album details to the card', () => {
+    setupOnSnapshot(makeSnapshot())
+    renderTicket()
+    fireEvent.change(screen.getByDisplayValue('חבילה בסיסית'), { target: { value: 'pkg2' } })
+    expect(screen.getByDisplayValue('30x30')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('20')).toBeInTheDocument()
   })
 
   it('shows hover hint explaining why agreement button is disabled', () => {

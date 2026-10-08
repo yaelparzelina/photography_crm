@@ -4,7 +4,8 @@ import { db } from '../firebase'
 import { usePhotoshootTypes } from '../hooks/usePhotoshootTypes'
 import { usePackagesByType } from '../hooks/usePackages'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
-import Toggle from '../components/ui/Toggle'
+import AlbumFields from '../components/AlbumFields'
+import { normalizeAlbum } from '../utils/album'
 import Button from '../components/ui/Button'
 import IconButton from '../components/ui/IconButton'
 import Field from '../components/ui/Field'
@@ -141,18 +142,7 @@ function PkgFields({ data, setter }) {
         <input type="number" className={inputClass()} value={data.photoCount || ''} onChange={(e) => setter('photoCount', e.target.value)} /></Field>
       <Field label="מספר לוקיישנים">
         <input type="number" className={inputClass()} value={data.locationCount || ''} onChange={(e) => setter('locationCount', e.target.value)} /></Field>
-      <div className="col-span-2">
-        <Toggle text="כולל אלבום" label="החלף כולל אלבום" checked={data.includesAlbum}
-          onChange={(v) => setter('includesAlbum', v)} />
-      </div>
-      {data.includesAlbum && (
-        <>
-          <Field label="גודל אלבום">
-            <input className={inputClass()} value={data.albumSize || ''} onChange={(e) => setter('albumSize', e.target.value)} placeholder="30x30" /></Field>
-          <Field label="מספר עמודים">
-            <input type="number" className={inputClass()} value={data.albumPages || ''} onChange={(e) => setter('albumPages', e.target.value)} /></Field>
-        </>
-      )}
+      <AlbumFields data={data} onChange={setter} className="col-span-2" />
     </div>
   )
 }
@@ -178,9 +168,7 @@ function PackagesTab() {
       price: Number(newPkg.price),
       photoCount: Number(newPkg.photoCount),
       locationCount: Number(newPkg.locationCount),
-      includesAlbum: newPkg.includesAlbum,
-      albumSize: newPkg.includesAlbum ? newPkg.albumSize : null,
-      albumPages: newPkg.includesAlbum ? Number(newPkg.albumPages) : null,
+      ...normalizeAlbum(newPkg),
     })
     setShowNew(false)
     setNewPkg({ name: '', price: '', photoCount: '', locationCount: 1, includesAlbum: false, albumSize: '', albumPages: '' })
@@ -190,9 +178,7 @@ function PackagesTab() {
     await updatePackage(editId, {
       name: editData.name, price: Number(editData.price),
       photoCount: Number(editData.photoCount), locationCount: Number(editData.locationCount),
-      includesAlbum: editData.includesAlbum,
-      albumSize: editData.includesAlbum ? editData.albumSize : null,
-      albumPages: editData.includesAlbum ? Number(editData.albumPages) : null,
+      ...normalizeAlbum(editData),
     })
     setEditId(null)
   }
@@ -225,7 +211,7 @@ function PackagesTab() {
                       <p className="text-sm font-medium text-gray-900">{p.name}</p>
                       <p className="text-xs text-gray-500 mt-0.5">
                         ₪{p.price?.toLocaleString()} · {p.photoCount} תמונות · {p.locationCount} לוקיישן
-                        {p.includesAlbum && ` · אלבום ${p.albumSize}`}
+                        {p.includesAlbum && ` · אלבום ${p.albumSize || ''} ${p.albumPages ? `(${p.albumPages} עמ')` : ''}`}
                       </p>
                     </div>
                     <div className="flex gap-1">
