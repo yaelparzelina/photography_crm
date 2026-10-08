@@ -17,6 +17,8 @@ import DisabledHint from '../components/ui/DisabledHint'
 import Toggle from '../components/ui/Toggle'
 import Segmented from '../components/ui/Segmented'
 import AlbumFields from '../components/AlbumFields'
+import BusinessDaysField from '../components/BusinessDaysField'
+import { normalizeBusinessDays } from '../utils/delivery'
 import { normalizeAlbum } from '../utils/album'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
@@ -188,6 +190,8 @@ export default function ClientTicket() {
         ...rest,
         shootDate: form.shootDate || null,
         eventDate: form.eventDate || null,
+        businessDays: normalizeBusinessDays(form.businessDays),
+        publicityApproved: !!form.publicityApproved,
         dateOfBirth: form.dateOfBirth || null,
         ...(albumData.includesAlbum != null ? normalizeAlbum(albumData) : {}),
       })
@@ -330,12 +334,16 @@ export default function ClientTicket() {
               value={form.eventDate ? toInputDate(form.eventDate) : ''}
               onChange={(e) => set('eventDate', fromInputDate(e.target.value))} />
           </Field>
+          <BusinessDaysField value={form.businessDays} onChange={(v) => set('businessDays', v)} />
           <Field label="מחיר (₪)">
             <input type="number" className={inputClass()} value={form.price ?? ''}
               onChange={(e) => set('price', e.target.value ? Number(e.target.value) : null)} />
           </Field>
-          <div className="sm:self-end flex items-center min-h-[42px]">
+          <div className="flex items-center min-h-[42px]">
             <Toggle text="שילם מקדמה" checked={form.paidAdvance} onChange={(v) => set('paidAdvance', v)} />
+          </div>
+          <div className="flex items-center min-h-[42px]">
+            <Toggle text="אישור פרסום" checked={form.publicityApproved} onChange={(v) => set('publicityApproved', v)} />
           </div>
           <AlbumFields data={albumData} onChange={setAlbum} className="sm:col-span-2" />
         </div>

@@ -6,6 +6,8 @@ import CopyLink from './ui/CopyLink'
 import { inputClass } from './ui/styles'
 import ConfirmDialog from './ui/ConfirmDialog'
 import AlbumFields from './AlbumFields'
+import BusinessDaysField from './BusinessDaysField'
+import { normalizeBusinessDays } from '../utils/delivery'
 import { normalizeAlbum } from '../utils/album'
 import { useLinks } from '../hooks/useLinks'
 import AgreementTemplate from '../templates/AgreementTemplate'
@@ -30,6 +32,7 @@ export default function AgreementEditorModal({ isOpen, onClose, client, packages
       const albumSource = client?.includesAlbum != null ? client : pkg
       setOverrides({
         photoCount: pkg.photoCount,
+        businessDays: client?.businessDays ?? '',
         includesAlbum: !!albumSource.includesAlbum,
         albumSize: albumSource.albumSize || '',
         albumPages: albumSource.albumPages || '',
@@ -69,10 +72,11 @@ export default function AgreementEditorModal({ isOpen, onClose, client, packages
         shootDate: overrides.shootDate || null,
         price: client.price || null,
         photoCount: overrides.photoCount,
+        businessDays: normalizeBusinessDays(overrides.businessDays),
         ...album,
       }
       // Keep the client card in sync with what was put in the agreement
-      const clientUpdates = { shootDate: snapshot.shootDate, ...album }
+      const clientUpdates = { shootDate: snapshot.shootDate, businessDays: snapshot.businessDays, ...album }
       const linkId = await createAgreementLink(client.id, snapshot, clientUpdates)
       setGeneratedLinkId(linkId)
       onLinkCreated(linkId, clientUpdates)
@@ -117,6 +121,8 @@ export default function AgreementEditorModal({ isOpen, onClose, client, packages
                 onChange={(e) => set('photoCount', Number(e.target.value))} />
             </Field>
 
+            <BusinessDaysField value={overrides.businessDays} onChange={(v) => set('businessDays', v)} />
+
             <AlbumFields data={overrides} onChange={set} />
 
             <ModalActions>
@@ -148,6 +154,7 @@ export default function AgreementEditorModal({ isOpen, onClose, client, packages
           shootDate: overrides.shootDate || null,
           price: client?.price || null,
           photoCount: overrides.photoCount,
+          businessDays: normalizeBusinessDays(overrides.businessDays),
           ...normalizeAlbum(overrides),
         }} />
       </Modal>

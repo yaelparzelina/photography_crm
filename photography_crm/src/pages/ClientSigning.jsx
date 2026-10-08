@@ -11,7 +11,7 @@ import { inputClass, cardClass } from '../components/ui/styles'
 
 const AGREEMENT_FIELDS = [
   'clientName', 'photoshootTypeName', 'packageName', 'shootDate', 'price',
-  'photoCount', 'includesAlbum', 'albumSize', 'albumPages',
+  'photoCount', 'includesAlbum', 'albumSize', 'albumPages', 'businessDays',
 ]
 
 export default function ClientSigning() {

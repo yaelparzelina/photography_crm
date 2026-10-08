@@ -1,4 +1,5 @@
 import { formatDate } from '../utils/dateUtils'
+import { normalizeBusinessDays } from '../utils/delivery'
 
 export default function AgreementTemplate({ link, date }) {
   const today = formatDate(date || new Date())
@@ -52,7 +53,7 @@ export default function AgreementTemplate({ link, date }) {
       <div className="mb-6">
         <h3 className="font-bold text-gray-900 mb-3">קבלת התמונות</h3>
         <ul className="space-y-1.5 text-sm text-gray-700">
-          <li>• התמונות הערוכות יישלחו למצולמים למייל, באיכות מעולה, בגלריה אינטרנטית, עד 10 ימי עסקים מיום הצילומים, כשהן מוכנות לכל שימוש: הדפסה, שיתוף במדיה ועוד.</li>
+          <li>• התמונות הערוכות יישלחו למצולמים למייל, באיכות מעולה, בגלריה אינטרנטית, עד {normalizeBusinessDays(link.businessDays)} ימי עסקים מיום הצילומים, כשהן מוכנות לכל שימוש: הדפסה, שיתוף במדיה ועוד.</li>
           <li>• יימסרו תמונות ערוכות בלבד ללא חומרי גלם.</li>
           {link.includesAlbum && (
             <li>• האלבום יימסר עם שליח לבית הלקוח, תוך 10 ימי עסקים, מיום אישור הדפסה מצד הלקוח.</li>

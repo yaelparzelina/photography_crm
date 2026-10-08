@@ -158,6 +158,28 @@ describe('AgreementEditorModal', () => {
     })
   })
 
+  it('business days come from the client card and are synced back; empty uses 10', async () => {
+    const onLinkCreated = vi.fn()
+    renderModal({ client: { ...defaultClient, businessDays: 12 }, onLinkCreated })
+    const input = screen.getByPlaceholderText('10')
+    expect(input).toHaveValue(12)
+    fireEvent.change(input, { target: { value: '20' } })
+    fireEvent.click(screen.getByText('צור קישור'))
+    await waitFor(() => {
+      expect(mockCreateAgreementLink).toHaveBeenCalledWith('client-1',
+        expect.objectContaining({ businessDays: 20 }), expect.objectContaining({ businessDays: 20 }))
+    })
+  })
+
+  it('business days default to 10 when left empty', async () => {
+    renderModal()
+    fireEvent.click(screen.getByText('צור קישור'))
+    await waitFor(() => {
+      expect(mockCreateAgreementLink).toHaveBeenCalledWith('client-1',
+        expect.objectContaining({ businessDays: 10 }), expect.objectContaining({ businessDays: 10 }))
+    })
+  })
+
   it('uses album details from the client card when set there', () => {
     renderModal({ client: { ...defaultClient, includesAlbum: true, albumSize: '40x40', albumPages: 24 } })
     expect(screen.getByDisplayValue('40x40')).toBeInTheDocument()
