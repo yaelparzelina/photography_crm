@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { doc, onSnapshot, updateDoc } from 'firebase/firestore'
 import { db } from '../firebase'
 import { useClients } from '../hooks/useClients'
@@ -55,6 +55,10 @@ function normalizeClientData(data) {
 export default function ClientTicket() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
+  // Where to go back to: the page that opened this card (e.g. the mailing list), else the client list
+  const returnTo = location.state?.from || '/dashboard'
+  const backLabel = location.state?.fromLabel ? `חזרה ל${location.state.fromLabel}` : 'חזרה לרשימה'
   const { deleteClient } = useClients()
   const { types } = usePhotoshootTypes()
 
@@ -197,12 +201,12 @@ export default function ClientTicket() {
   }
 
   function handleNavigateBack() {
-    if (dirty) { setShowLeaveWarning(true) } else { navigate('/dashboard') }
+    if (dirty) { setShowLeaveWarning(true) } else { navigate(returnTo) }
   }
 
   function handleLeaveWithoutSaving() {
     localStorage.removeItem(`draft_${id}`)
-    navigate('/dashboard')
+    navigate(returnTo)
   }
 
   function validatePhone(phone) {
@@ -235,7 +239,7 @@ export default function ClientTicket() {
       localStorage.removeItem(`draft_${id}`)
       editedRef.current.clear()
       setDirty(false)
-      navigate('/dashboard')
+      navigate(returnTo)
     } finally {
       setSaving(false)
     }
@@ -276,7 +280,7 @@ export default function ClientTicket() {
     try {
       await deleteClient(id)
       localStorage.removeItem(`draft_${id}`)
-      navigate('/dashboard')
+      navigate(returnTo)
     } catch {
       // navigation only on success
     }
@@ -307,7 +311,7 @@ export default function ClientTicket() {
   return (
     <div className="max-w-3xl">
       <Button variant="link" onClick={handleNavigateBack} className="mb-6">
-        <ArrowRight className="w-4 h-4" /> חזרה לרשימה
+        <ArrowRight className="w-4 h-4" /> {backLabel}
       </Button>
 
       <div className="flex items-center justify-between mb-6">
@@ -499,7 +503,7 @@ export default function ClientTicket() {
             <Trash2 className="w-4 h-4" /> מחק לקוח
           </Button>
           <Button variant="secondary" onClick={handleNavigateBack}>
-            <ArrowRight className="w-4 h-4" /> חזרה לרשימה
+            <ArrowRight className="w-4 h-4" /> {backLabel}
           </Button>
         </div>
         <Button size="lg" onClick={handleSave} disabled={saving}>
@@ -513,7 +517,7 @@ export default function ClientTicket() {
         message="ביצעת שינויים שלא נשמרו. האם אתה בטוח שברצונך לצאת?"
         confirmLabel="צא ללא שמירה"
         destructive
-        extraAction={{ label: 'שמור וצא', onClick: async () => { setShowLeaveWarning(false); await handleSave(); navigate('/dashboard') } }}
+        extraAction={{ label: 'שמור וצא', onClick: async () => { setShowLeaveWarning(false); await handleSave() } }}
         onConfirm={handleLeaveWithoutSaving}
         onCancel={() => setShowLeaveWarning(false)}
       />

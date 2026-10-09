@@ -135,6 +135,29 @@ describe('App smoke (logged in)', () => {
     delete data.clients[1].email
   })
 
+  it('opening a client from the mailing list and pressing back returns there, with filters kept', () => {
+    sessionStorage.clear()
+    data.clients[1].newsletterConsent = true
+    data.clients[1].email = 'dana@example.com'
+    renderAt('/dashboard/mailing-list')
+    fireEvent.change(screen.getByPlaceholderText('חיפוש לפי שם, מייל או טלפון'), { target: { value: 'דנה' } })
+    fireEvent.click(screen.getByRole('button', { name: 'דנה לוי' }))
+    expect(screen.getByText('פרטי לקוח')).toBeInTheDocument()
+    fireEvent.click(screen.getAllByRole('button', { name: /חזרה לרשימת התפוצה/ })[0])
+    expect(screen.getByRole('heading', { name: 'רשימת תפוצה' })).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('חיפוש לפי שם, מייל או טלפון')).toHaveValue('דנה')
+    delete data.clients[1].newsletterConsent
+    delete data.clients[1].email
+    sessionStorage.clear()
+  })
+
+  it('opening a client from the home page and pressing back returns to the home page', () => {
+    renderAt('/dashboard')
+    fireEvent.click(screen.getByText('לקוח ישן'))
+    fireEvent.click(screen.getAllByRole('button', { name: /חזרה לרשימה/ })[0])
+    expect(screen.getByRole('heading', { name: 'לקוחות' })).toBeInTheDocument()
+  })
+
   it('settings packages tab renders and edits a package', () => {
     renderAt('/dashboard/settings')
     fireEvent.click(screen.getByText('חבילות'))

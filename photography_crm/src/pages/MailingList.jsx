@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Mail, Download, Copy, Check, AlertTriangle, X, Trash2 } from 'lucide-react'
 import { useClients } from '../hooks/useClients'
@@ -50,6 +50,16 @@ function NewsletterBadge({ client }) {
   )
 }
 
+const FILTERS_KEY = 'mailingList.filters'
+
+function loadFilters() {
+  try {
+    return JSON.parse(sessionStorage.getItem(FILTERS_KEY)) || {}
+  } catch {
+    return {}
+  }
+}
+
 function downloadFile(content, filename, type) {
   const url = URL.createObjectURL(new Blob([content], { type }))
   const a = document.createElement('a')
@@ -69,12 +79,26 @@ export default function MailingList() {
   const { sends, logSend, deleteSend } = useNewsletterSends()
   const [deleteSendTarget, setDeleteSendTarget] = useState(null)
 
-  const [newsletterStatus, setNewsletterStatus] = useState('subscribed')
-  const [search, setSearch] = useState('')
-  const [typeIds, setTypeIds] = useState([]) // empty = all types
-  const [statuses, setStatuses] = useState([]) // empty = all statuses
-  const [from, setFrom] = useState(null)
-  const [to, setTo] = useState(null)
+  // Filters are kept for the session, so coming back from a client card restores them
+  const [saved] = useState(loadFilters)
+  const [newsletterStatus, setNewsletterStatus] = useState(saved.newsletterStatus ?? 'subscribed')
+  const [search, setSearch] = useState(saved.search ?? '')
+  const [typeIds, setTypeIds] = useState(saved.typeIds ?? []) // empty = all types
+  const [statuses, setStatuses] = useState(saved.statuses ?? []) // empty = all statuses
+  const [from, setFrom] = useState(saved.from ? new Date(saved.from) : null)
+  const [to, setTo] = useState(saved.to ? new Date(saved.to) : null)
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(FILTERS_KEY, JSON.stringify({
+        newsletterStatus, search, typeIds, statuses, from: from?.toISOString() ?? null, to: to?.toISOString() ?? null,
+      }))
+    } catch { /* ignore */ }
+  }, [newsletterStatus, search, typeIds, statuses, from, to])
+
+  function openClient(id) {
+    navigate(`/dashboard/clients/${id}`, { state: { from: '/dashboard/mailing-list', fromLabel: 'רשימת התפוצה' } })
+  }
   const [deselected, setDeselected] = useState(new Set())
   const [copied, setCopied] = useState(false)
   const [logForm, setLogForm] = useState(null) // { method, subject } while logging a send
@@ -194,7 +218,7 @@ export default function MailingList() {
           {subscribedNoEmail.map((c, i) => (
             <span key={c.id}>
               {i > 0 && ', '}
-              <Button variant="link" size="md" className="underline underline-offset-2" onClick={() => navigate(`/dashboard/clients/${c.id}`)}>
+              <Button variant="link" size="md" className="underline underline-offset-2" onClick={() => openClient(c.id)}>
                 {getClientName(c) || 'ללא שם'}
               </Button>
             </span>
@@ -300,7 +324,7 @@ export default function MailingList() {
                       checked={receivable && !deselected.has(c.id)} disabled={!receivable} onChange={() => toggleRow(c.id)} />
                   </td>
                   <td className={tdClass}>
-                    <Button variant="link" onClick={() => navigate(`/dashboard/clients/${c.id}`)} className="font-medium text-gray-900">
+                    <Button variant="link" onClick={() => openClient(c.id)} className="font-medium text-gray-900">
                       {getClientName(c) || '—'}
                     </Button>
                   </td>

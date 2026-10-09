@@ -42,6 +42,7 @@ describe('MailingList', () => {
   let openSpy
   beforeEach(() => {
     vi.clearAllMocks()
+    sessionStorage.clear()
     mockPending.value = []
     mockSends.value = []
     mockUseClients.mockReturnValue({ clients, loading: false })
