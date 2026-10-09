@@ -30,14 +30,33 @@ export const UNSUBSCRIBE_SOURCE_LABELS = {
 
 export const NEWSLETTER_STATUS = {
   subscribed: { label: 'מנוי/ה', color: 'bg-green-100 text-green-800' },
+  declined: { label: 'סירב/ה', color: 'bg-orange-100 text-orange-800' },
   unsubscribed: { label: 'הוסר/ה', color: 'bg-red-100 text-red-800' },
-  none: { label: 'לא נרשם/ה', color: 'bg-gray-100 text-gray-600' },
+  none: { label: 'לא נשאל/ה', color: 'bg-gray-100 text-gray-600' },
 }
 
+export const NEWSLETTER_FIELDS = [
+  'newsletterConsent', 'newsletterConsentAt', 'newsletterConsentSource',
+  'newsletterUnsubscribedAt', 'newsletterUnsubscribeSource',
+]
+
+// subscribed: agreed · declined: said no when signing an agreement ·
+// unsubscribed: removed (via the unsubscribe link or by the owner) · none: never asked
 export function getNewsletterStatus(client) {
   if (client?.newsletterConsent) return 'subscribed'
-  if (client?.newsletterUnsubscribedAt) return 'unsubscribed'
+  if (client?.newsletterUnsubscribedAt) {
+    return client.newsletterUnsubscribeSource === 'agreement' ? 'declined' : 'unsubscribed'
+  }
   return 'none'
+}
+
+// Only a manual removal by the owner may be undone back to "never asked" (the client's own refusal may not)
+export function canResetToNone(client) {
+  return getNewsletterStatus(client) === 'unsubscribed' && client.newsletterUnsubscribeSource === 'owner'
+}
+
+export const RESET_TO_NONE = {
+  newsletterConsent: false, newsletterUnsubscribedAt: null, newsletterUnsubscribeSource: null,
 }
 
 // Fields to write when consent is turned on/off

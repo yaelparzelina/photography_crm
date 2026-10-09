@@ -126,6 +126,20 @@ describe('MailingList', () => {
     await waitFor(() => expect(mockDeleteSend).toHaveBeenCalledWith('s1'))
   })
 
+  it('separates clients who declined from those who were removed or never asked', () => {
+    mockUseClients.mockReturnValue({ clients: [...clients,
+      { id: 'f', firstName: 'סירבה', email: 'no@example.com', newsletterConsent: false, newsletterUnsubscribedAt: ts('2025-04-01'), newsletterUnsubscribeSource: 'agreement' },
+      { id: 'g', firstName: 'לאנשאלה', email: 'q@example.com' },
+    ], loading: false })
+    renderPage()
+    expect(screen.getByText(/4 מנויים · 1 סירבו · 1 הוסרו · 1 לא נשאלו/)).toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText('סטטוס ניוזלטר'), { target: { value: 'declined' } })
+    expect(screen.getByText('סירבה')).toBeInTheDocument()
+    expect(screen.queryByText('גיל')).not.toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText('סטטוס ניוזלטר'), { target: { value: 'none' } })
+    expect(screen.getByText('לאנשאלה')).toBeInTheDocument()
+  })
+
   it('lists unsubscribe requests that did not match any client', () => {
     mockPending.value = [{ id: 'r1', email: 'stranger@example.com', createdAt: ts('2025-06-01') }]
     renderPage()

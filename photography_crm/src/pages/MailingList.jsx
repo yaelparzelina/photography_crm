@@ -25,8 +25,9 @@ import {
 
 const NEWSLETTER_FILTERS = [
   { value: 'subscribed', label: 'מנויים' },
+  { value: 'declined', label: 'סירבו' },
   { value: 'unsubscribed', label: 'הוסרו' },
-  { value: 'none', label: 'לא נרשמו' },
+  { value: 'none', label: 'לא נשאלו' },
   { value: 'all', label: 'הכל' },
 ]
 
@@ -38,7 +39,7 @@ function NewsletterBadge({ client }) {
   const config = NEWSLETTER_STATUS[status]
   const detail = status === 'subscribed'
     ? `${formatDate(client.newsletterConsentAt)} · ${CONSENT_SOURCE_LABELS[client.newsletterConsentSource] || ''}`
-    : status === 'unsubscribed'
+    : status === 'unsubscribed' || status === 'declined'
       ? `${formatDate(client.newsletterUnsubscribedAt)} · ${UNSUBSCRIBE_SOURCE_LABELS[client.newsletterUnsubscribeSource] || ''}`
       : ''
   return (
@@ -91,7 +92,7 @@ export default function MailingList() {
   const allVisibleSelected = selectable.length > 0 && selectable.every((c) => !deselected.has(c.id))
   const subscribedNoEmail = clients.filter((c) => getNewsletterStatus(c) === 'subscribed' && !normalizeEmail(c.email))
   const counts = useMemo(() => {
-    const out = { subscribed: 0, unsubscribed: 0, none: 0 }
+    const out = { subscribed: 0, declined: 0, unsubscribed: 0, none: 0 }
     clients.forEach((c) => { out[getNewsletterStatus(c)]++ })
     return out
   }, [clients])
@@ -165,7 +166,7 @@ export default function MailingList() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold text-gray-900">רשימת תפוצה</h1>
         <p className="text-sm text-gray-500">
-          {counts.subscribed} מנויים · {counts.unsubscribed} הוסרו · {counts.none} לא נרשמו
+          {counts.subscribed} מנויים · {counts.declined} סירבו · {counts.unsubscribed} הוסרו · {counts.none} לא נשאלו
         </p>
       </div>
 

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
-  getNewsletterStatus, consentChange, filterMailingList, canReceive, buildMailingCsv,
+  getNewsletterStatus, consentChange, filterMailingList, canReceive, buildMailingCsv, canResetToNone,
   gmailComposeUrl, emailFooter, unsubscribeUrl, NEWSLETTER_CONSENT_TEXT,
 } from '../newsletter'
 
@@ -20,6 +20,18 @@ const clients = [
 describe('newsletter status', () => {
   it('distinguishes subscribed, unsubscribed and never subscribed', () => {
     expect(clients.map(getNewsletterStatus)).toEqual(['subscribed', 'subscribed', 'unsubscribed', 'subscribed', 'none'])
+  })
+
+  it('a refusal at signing is "declined", a removal is "unsubscribed"; only owner removals can be reset', () => {
+    const at = ts('2025-01-01')
+    const declined = { newsletterConsent: false, newsletterUnsubscribedAt: at, newsletterUnsubscribeSource: 'agreement' }
+    const byLink = { newsletterConsent: false, newsletterUnsubscribedAt: at, newsletterUnsubscribeSource: 'link' }
+    const byOwner = { newsletterConsent: false, newsletterUnsubscribedAt: at, newsletterUnsubscribeSource: 'owner' }
+    expect(getNewsletterStatus(declined)).toBe('declined')
+    expect(getNewsletterStatus(byLink)).toBe('unsubscribed')
+    expect(getNewsletterStatus(byOwner)).toBe('unsubscribed')
+    expect(getNewsletterStatus({})).toBe('none')
+    expect([declined, byLink, byOwner].map(canResetToNone)).toEqual([false, false, true])
   })
 
   it('consentChange records date and source, and turning off records an unsubscribe', () => {

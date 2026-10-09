@@ -19,7 +19,10 @@ import Segmented from '../components/ui/Segmented'
 import AlbumFields from '../components/AlbumFields'
 import BusinessDaysField from '../components/BusinessDaysField'
 import { normalizeBusinessDays } from '../utils/delivery'
-import { consentChange, getNewsletterStatus, CONSENT_SOURCE_LABELS, UNSUBSCRIBE_SOURCE_LABELS } from '../utils/newsletter'
+import {
+  consentChange, getNewsletterStatus, canResetToNone, RESET_TO_NONE, NEWSLETTER_FIELDS, NEWSLETTER_STATUS,
+  CONSENT_SOURCE_LABELS, UNSUBSCRIBE_SOURCE_LABELS,
+} from '../utils/newsletter'
 import { normalizeAlbum } from '../utils/album'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
@@ -241,9 +244,18 @@ export default function ClientTicket() {
   const newsletterStatus = getNewsletterStatus(form)
   const newsletterNote = newsletterStatus === 'subscribed'
     ? `ברשימת התפוצה מ-${formatDate(form.newsletterConsentAt)} · ${CONSENT_SOURCE_LABELS[form.newsletterConsentSource] || ''}`
-    : newsletterStatus === 'unsubscribed'
-      ? `הוסר/ה מרשימת התפוצה ב-${formatDate(form.newsletterUnsubscribedAt)} · ${UNSUBSCRIBE_SOURCE_LABELS[form.newsletterUnsubscribeSource] || ''}`
-      : 'לא ברשימת התפוצה'
+    : newsletterStatus === 'declined' || newsletterStatus === 'unsubscribed'
+      ? `${NEWSLETTER_STATUS[newsletterStatus].label} ב-${formatDate(form.newsletterUnsubscribedAt)} · ${UNSUBSCRIBE_SOURCE_LABELS[form.newsletterUnsubscribeSource] || ''}`
+      : 'לא נשאל/ה (לא ברשימת התפוצה)'
+
+  // Turning the switch off only records a removal if the client was really subscribed (in the saved data).
+  // Otherwise it just undoes an accidental "on", restoring the saved state.
+  function handleNewsletterToggle(on) {
+    if (on) { update(consentChange(true, 'owner')); return }
+    if (getNewsletterStatus(client) === 'subscribed') { update(consentChange(false, 'owner')); return }
+    NEWSLETTER_FIELDS.forEach((k) => editedRef.current.delete(k))
+    setForm((f) => ({ ...f, ...Object.fromEntries(NEWSLETTER_FIELDS.map((k) => [k, client[k] ?? null])) }))
+  }
 
   // Opens the messages page prefilled from what's currently on the card (saved or not)
   function openMessages() {
@@ -344,8 +356,18 @@ export default function ClientTicket() {
           </Field>
           <div className="sm:col-span-2">
             <Toggle text="מאשר/ת קבלת ניוזלטר והטבות" checked={!!form.newsletterConsent}
-              onChange={(v) => update(consentChange(v, 'owner'))} />
-            <p className="text-xs text-gray-400 mt-1">{newsletterNote}</p>
+              onChange={handleNewsletterToggle} />
+            <p className="text-xs text-gray-400 mt-1">
+              {newsletterNote}
+              {canResetToNone(form) && (
+                <>
+                  {' · '}
+                  <Button variant="link" size="sm" className="underline underline-offset-2 text-xs" onClick={() => update(RESET_TO_NONE)}>
+                    החזר ל״לא נשאל/ה״ (סומן בטעות)
+                  </Button>
+                </>
+              )}
+            </p>
           </div>
         </div>
       </Card>

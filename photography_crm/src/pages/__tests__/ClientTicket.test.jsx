@@ -304,7 +304,7 @@ describe('ClientTicket', () => {
   it('newsletter consent toggle records date and manual source; photo publicity toggle is renamed', async () => {
     setupOnSnapshot(makeSnapshot())
     renderTicket()
-    expect(screen.getByText('לא ברשימת התפוצה')).toBeInTheDocument()
+    expect(screen.getByText('לא נשאל/ה (לא ברשימת התפוצה)')).toBeInTheDocument()
     expect(screen.getByRole('switch', { name: 'אישור פרסום תמונות' })).toBeInTheDocument()
     fireEvent.click(screen.getByRole('switch', { name: 'מאשר/ת קבלת ניוזלטר והטבות' }))
     expect(screen.getByText(/ברשימת התפוצה מ-.* · סומן ידנית/)).toBeInTheDocument()
@@ -314,6 +314,40 @@ describe('ClientTicket', () => {
         newsletterConsent: true, newsletterConsentSource: 'owner', newsletterConsentAt: expect.any(Date),
       }))
     })
+  })
+
+  it('turning the newsletter switch on and off by mistake leaves the client as "never asked"', async () => {
+    setupOnSnapshot(makeSnapshot())
+    renderTicket()
+    const toggle = screen.getByRole('switch', { name: 'מאשר/ת קבלת ניוזלטר והטבות' })
+    fireEvent.click(toggle)
+    fireEvent.click(toggle)
+    expect(screen.getByText(/לא נשאל\/ה/)).toBeInTheDocument()
+    fireEvent.click(screen.getByText('שמור שינויים'))
+    await waitFor(() => expect(mockUpdateDoc).toHaveBeenCalled())
+    const saved = mockUpdateDoc.mock.calls[0][1]
+    expect(saved.newsletterUnsubscribedAt ?? null).toBeNull()
+    expect(saved.newsletterConsent ?? false).toBe(false)
+  })
+
+  it('turning off a real subscriber records a manual removal, which can be reset to "never asked"', async () => {
+    setupOnSnapshot(makeSnapshot({ data: { ...clientData, newsletterConsent: true, newsletterConsentSource: 'owner', newsletterConsentAt: { toDate: () => new Date('2025-01-01') } } }))
+    renderTicket()
+    fireEvent.click(screen.getByRole('switch', { name: 'מאשר/ת קבלת ניוזלטר והטבות' }))
+    expect(screen.getByText(/הוסר\/ה ב-.* · הוסר ידנית/)).toBeInTheDocument()
+    fireEvent.click(screen.getByText(/החזר ל״לא נשאל\/ה״/))
+    expect(screen.getByText(/לא נשאל\/ה/)).toBeInTheDocument()
+    fireEvent.click(screen.getByText('שמור שינויים'))
+    await waitFor(() => expect(mockUpdateDoc).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+      newsletterConsent: false, newsletterUnsubscribedAt: null, newsletterUnsubscribeSource: null,
+    })))
+  })
+
+  it('a client who declined at signing shows "declined" and cannot be reset', () => {
+    setupOnSnapshot(makeSnapshot({ data: { ...clientData, newsletterConsent: false, newsletterUnsubscribeSource: 'agreement', newsletterUnsubscribedAt: { toDate: () => new Date('2025-02-01') } } }))
+    renderTicket()
+    expect(screen.getByText(/סירב\/ה ב-01\/02\/2025 · סירב\/ה בחתימה על הסכם/)).toBeInTheDocument()
+    expect(screen.queryByText(/החזר ל״לא נשאל\/ה״/)).not.toBeInTheDocument()
   })
 
   it('custom business days are saved', async () => {
