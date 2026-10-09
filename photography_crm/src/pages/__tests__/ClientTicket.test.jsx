@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, within, act } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { vi, describe, it, expect, beforeEach } from 'vitest'
 
@@ -332,6 +332,35 @@ describe('ClientTicket', () => {
     fireEvent.change(screen.getByDisplayValue('חבילה בסיסית'), { target: { value: 'pkg2' } })
     expect(screen.getByDisplayValue('30x30')).toBeInTheDocument()
     expect(screen.getByDisplayValue('20')).toBeInTheDocument()
+  })
+
+  it('shows changes saved elsewhere (e.g. email typed when signing) without losing fields edited here', async () => {
+    let push
+    mockOnSnapshot.mockImplementation((ref, cb) => { push = cb; cb(makeSnapshot({ data: { ...clientData, email: '' } })); return () => {} })
+    renderTicket()
+    fireEvent.change(screen.getByDisplayValue('050-1234567'), { target: { value: '050-9999999' } })
+    // The client signs the agreement while the page is open
+    act(() => push(makeSnapshot({ data: { ...clientData, email: 'signed@example.com', status: 'agreement_signed' } })))
+    expect(screen.getByDisplayValue('signed@example.com')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('050-9999999')).toBeInTheDocument()
+    fireEvent.click(screen.getByText('שמור שינויים'))
+    await waitFor(() => expect(mockUpdateDoc).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+      email: 'signed@example.com', phone: '050-9999999', status: 'agreement_signed',
+    })))
+  })
+
+  it('unsaved changes are restored after a refresh without bringing back stale values', () => {
+    let push
+    mockOnSnapshot.mockImplementation((ref, cb) => { push = cb; cb(makeSnapshot({ data: { ...clientData, email: '' } })); return () => {} })
+    const { unmount } = renderTicket()
+    fireEvent.change(screen.getByDisplayValue('050-1234567'), { target: { value: '050-9999999' } })
+    unmount()
+    // Meanwhile the client signed and typed an email; the owner reopens the page
+    setupOnSnapshot(makeSnapshot({ data: { ...clientData, email: 'signed@example.com' } }))
+    renderTicket()
+    expect(screen.getByDisplayValue('050-9999999')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('signed@example.com')).toBeInTheDocument()
+    expect(push).toBeDefined()
   })
 
   it('shows hover hint explaining why agreement button is disabled', () => {

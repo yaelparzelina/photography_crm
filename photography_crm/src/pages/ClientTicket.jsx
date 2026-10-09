@@ -33,6 +33,13 @@ import { formatDate, toInputDate, fromInputDate } from '../utils/dateUtils'
 import { ArrowRight, Trash2, FileText, Eye, Download, MessageCircle } from 'lucide-react'
 
 
+// Comparable form of a field value (Firestore Timestamps and Dates compare by time)
+function valueKey(v) {
+  if (v && typeof v.toDate === 'function') return `d:${v.toDate().getTime()}`
+  if (v instanceof Date) return `d:${v.getTime()}`
+  return JSON.stringify(v ?? null)
+}
+
 function normalizeClientData(data) {
   const { name: legacyName, ...rest } = data
   return {
@@ -66,6 +73,9 @@ export default function ClientTicket() {
   const [printSignedDoc, setPrintSignedDoc] = useState(null)
 
   const initializedRef = useRef(false)
+  // Fields the owner changed on this page. All other fields always follow the saved data,
+  // so changes made elsewhere (e.g. the email the client typed when signing) show up and are never overwritten.
+  const editedRef = useRef(new Set())
   const printRef = useRef(null)
   const { documents: signedDocuments } = useSignedDocuments(id)
 
@@ -81,8 +91,10 @@ export default function ClientTicket() {
   useEffect(() => {
     if (!dirty || !client) return
     try {
+      // Only the fields edited on this page are kept, so a draft never brings back stale values.
       // Read the raw value: JSON.stringify turns Dates into strings before the replacer sees them
-      localStorage.setItem(`draft_${id}`, JSON.stringify(form, function (key, val) {
+      const changes = Object.fromEntries([...editedRef.current].map((k) => [k, form[k]]))
+      localStorage.setItem(`draft_${id}`, JSON.stringify({ _v: 2, changes }, function (key, val) {
         const raw = this[key]
         if (raw instanceof Date || typeof raw?.toDate === 'function') {
           const date = raw.toDate ? raw.toDate() : raw
@@ -99,28 +111,45 @@ export default function ClientTicket() {
       if (snap.exists()) {
         const data = { id: snap.id, ...snap.data() }
         setClient(data)
+        const saved = normalizeClientData(data)
         if (!initializedRef.current) {
           initializedRef.current = true
+          editedRef.current = new Set()
           const raw = localStorage.getItem(`draft_${id}`)
+          let draft = null
           if (raw) {
             try {
               const parsed = JSON.parse(raw, (_, val) => {
                 if (val && typeof val === 'object' && val._t) return fromInputDate(val._t)
                 return val
               })
-              const { name: legacyName, ...draftRest } = parsed
-              setForm({
-                ...draftRest,
-                firstName: parsed.firstName || legacyName || '',
-                lastName: parsed.lastName || '',
-              })
-              setDirty(true)
-            } catch {
-              setForm(normalizeClientData(data))
-            }
-          } else {
-            setForm(normalizeClientData(data))
+              if (parsed?._v === 2) {
+                draft = parsed.changes || {}
+              } else {
+                // Older drafts stored the whole form: treat only fields that differ from the saved data as edits
+                const { name: legacyName, ...draftRest } = parsed
+                const full = { ...draftRest, firstName: parsed.firstName || legacyName || '', lastName: parsed.lastName || '' }
+                draft = Object.fromEntries(Object.entries(full).filter(([k, v]) => k !== 'id' && valueKey(v) !== valueKey(saved[k])))
+              }
+            } catch { /* ignore a broken draft */ }
           }
+          if (draft) {
+            const changes = draft
+            Object.keys(changes).forEach((k) => editedRef.current.add(k))
+            setForm({ ...saved, ...changes })
+            setDirty(Object.keys(changes).length > 0)
+          } else {
+            setForm(saved)
+          }
+        } else {
+          // Saved data changed while the page is open: update every field the owner hasn't touched
+          setForm((f) => {
+            const next = { ...f }
+            for (const [k, v] of Object.entries(saved)) {
+              if (!editedRef.current.has(k)) next[k] = v
+            }
+            return next
+          })
         }
       }
       setLoading(false)
@@ -128,9 +157,15 @@ export default function ClientTicket() {
     return unsub
   }, [id])
 
-  function set(field, value) {
-    setForm((f) => ({ ...f, [field]: value }))
+  // Applies changes made on this page and remembers which fields were edited
+  function update(changes) {
+    Object.keys(changes).forEach((k) => editedRef.current.add(k))
+    setForm((f) => ({ ...f, ...changes }))
     setDirty(true)
+  }
+
+  function set(field, value) {
+    update({ [field]: value })
     if (field === 'phone') setPhoneError('')
     if (field === 'email') setEmailError('')
   }
@@ -145,8 +180,7 @@ export default function ClientTicket() {
 
   function handlePackageChange(packageId) {
     const pkg = packages.find((p) => p.id === packageId)
-    setForm((f) => ({ ...f, packageId, ...(pkg ? albumFromPackage(pkg) : {}) }))
-    setDirty(true)
+    update({ packageId, ...(pkg ? albumFromPackage(pkg) : {}) })
   }
 
   // Clients saved before album details existed on the card show the package's album details
@@ -156,8 +190,7 @@ export default function ClientTicket() {
     : form
 
   function setAlbum(field, value) {
-    setForm((f) => ({ ...f, ...(f.includesAlbum == null ? albumFromPackage(selectedPackage) : {}), [field]: value }))
-    setDirty(true)
+    update({ ...(form.includesAlbum == null ? albumFromPackage(selectedPackage) : {}), [field]: value })
   }
 
   function handleNavigateBack() {
@@ -197,6 +230,7 @@ export default function ClientTicket() {
         ...(albumData.includesAlbum != null ? normalizeAlbum(albumData) : {}),
       })
       localStorage.removeItem(`draft_${id}`)
+      editedRef.current.clear()
       setDirty(false)
       navigate('/dashboard')
     } finally {
@@ -313,7 +347,7 @@ export default function ClientTicket() {
           </Field>
           <div className="sm:col-span-2">
             <Toggle text="מאשר/ת קבלת ניוזלטר והטבות" checked={!!form.newsletterConsent}
-              onChange={(v) => { setForm((f) => ({ ...f, ...consentChange(v, 'owner') })); setDirty(true) }} />
+              onChange={(v) => update(consentChange(v, 'owner'))} />
             <p className="text-xs text-gray-400 mt-1">{newsletterNote}</p>
           </div>
         </div>
