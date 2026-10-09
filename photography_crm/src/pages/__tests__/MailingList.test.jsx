@@ -65,20 +65,21 @@ describe('MailingList', () => {
 
   it('filters by a group of photoshoot types with checkboxes (bat mitzvah + family only)', () => {
     renderPage()
-    const types = screen.getByRole('group', { name: 'סוג צילום' })
     expect(screen.getByText('3 נמענים נבחרו')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /סוג צילום: הכל/ }))
+    const types = screen.getByRole('listbox', { name: 'סוג צילום' })
     fireEvent.click(within(types).getByLabelText('בת מצווה'))
     fireEvent.click(within(types).getByLabelText('משפחה'))
     expect(screen.queryByText('שירה')).not.toBeInTheDocument()
-    fireEvent.click(within(types).getByText('נקה'))
+    expect(screen.getByText('2 נמענים נבחרו')).toBeInTheDocument()
+    fireEvent.click(within(types).getByText('נקה בחירה'))
     expect(screen.getByText('שירה')).toBeInTheDocument()
-    fireEvent.click(within(types).getByText('בחר הכל'))
-    expect(within(types).getByLabelText('ניו בורן')).toBeChecked()
   })
 
   it('filters by client status', () => {
     renderPage()
-    const statuses = screen.getByRole('group', { name: 'סטטוס לקוח' })
+    fireEvent.click(screen.getByRole('button', { name: /סטטוס: הכל/ }))
+    const statuses = screen.getByRole('listbox', { name: 'סטטוס' })
     fireEvent.click(within(statuses).getByLabelText('הסתיים'))
     expect(screen.queryByText('רון כהן')).not.toBeInTheDocument()
     fireEvent.click(within(statuses).getByText('הכל בתהליך'))
@@ -109,7 +110,7 @@ describe('MailingList', () => {
 
   it('shows unsubscribed clients when that filter is chosen, and they cannot be selected', () => {
     renderPage()
-    fireEvent.click(screen.getByRole('radio', { name: 'הוסרו' }))
+    fireEvent.change(screen.getByLabelText('סטטוס ניוזלטר'), { target: { value: 'unsubscribed' } })
     expect(screen.getByText('גיל')).toBeInTheDocument()
     expect(screen.getByText(/דרך קישור ההסרה/)).toBeInTheDocument()
     expect(screen.getByLabelText('בחר את גיל')).toBeDisabled()

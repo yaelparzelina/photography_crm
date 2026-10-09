@@ -5,12 +5,12 @@ import { Plus, Search, ChevronUp, ChevronDown, X } from 'lucide-react'
 import { useClients } from '../hooks/useClients'
 import { usePhotoshootTypes } from '../hooks/usePhotoshootTypes'
 import NewClientModal from '../components/NewClientModal'
-import StatusFilter from '../components/StatusFilter'
+import MultiSelect from '../components/ui/MultiSelect'
 import Button from '../components/ui/Button'
 import IconButton from '../components/ui/IconButton'
 import { cardClass } from '../components/ui/styles'
 import { formatDate } from '../utils/dateUtils'
-import { STATUS_CONFIG, STATUS_OPTIONS } from '../utils/statusConfig'
+import { STATUS_CONFIG, STATUS_OPTIONS, IN_PROGRESS_PRESET } from '../utils/statusConfig'
 import { getClientName } from '../utils/clientUtils'
 
 const MENU_GAP = 12 // keep this much space from the screen edge
@@ -171,7 +171,8 @@ export default function Dashboard() {
             </IconButton>
           )}
         </div>
-        <StatusFilter value={statusFilter} onChange={setStatusFilter} />
+        <MultiSelect options={STATUS_OPTIONS} value={statusFilter} onChange={setStatusFilter}
+          allLabel="כל הסטטוסים" presets={[IN_PROGRESS_PRESET]} className="w-48" />
       </div>
 
       <div className={`${cardClass} overflow-hidden`}>

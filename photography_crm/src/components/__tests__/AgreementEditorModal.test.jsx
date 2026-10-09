@@ -25,6 +25,12 @@ vi.mock('../../hooks/useLinks', () => ({
   useLinks: () => ({ createAgreementLink: mockCreateAgreementLink }),
 }))
 
+// Packages are loaded by the editor for the chosen shoot type
+const mockPackagesByType = vi.hoisted(() => ({ value: {} }))
+vi.mock('../../hooks/usePackages', () => ({
+  usePackagesByType: (typeId) => ({ packages: mockPackagesByType.value[typeId] || [] }),
+}))
+
 import AgreementEditorModal from '../AgreementEditorModal'
 
 // --- Test data ---
@@ -49,7 +55,10 @@ const defaultPackages = [
 
 const defaultTypes = [
   { id: 'type1', name: 'צילום חתונה' },
+  { id: 'type2', name: 'צילום משפחה' },
 ]
+
+const familyPackages = [{ id: 'pkg3', name: 'משפחה קלאסית', photoCount: 40, includesAlbum: false }]
 
 const defaultClient = {
   id: 'client-1',
@@ -79,6 +88,7 @@ describe('AgreementEditorModal', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockCreateAgreementLink.mockResolvedValue('agreement-link-456')
+    mockPackagesByType.value = { type1: defaultPackages, type2: familyPackages }
   })
 
   it('renders nothing when isOpen is false', () => {
@@ -86,9 +96,28 @@ describe('AgreementEditorModal', () => {
     expect(container).toBeEmptyDOMElement()
   })
 
-  it('shows "יש לבחור חבילה" message when no matching package found', () => {
-    renderModal({ client: { ...defaultClient, packageId: 'nonexistent' } })
-    expect(screen.getByText('יש לבחור חבילה בכרטיס הלקוח תחילה.')).toBeInTheDocument()
+  it('opens even without a package; type and package are required to create the link', async () => {
+    renderModal({ client: { ...defaultClient, photoshootTypeId: '', packageId: '' } })
+    fireEvent.click(screen.getByText('צור קישור'))
+    expect(screen.getByText('יש לבחור סוג צילום')).toBeInTheDocument()
+    expect(screen.getByText('יש לבחור חבילה')).toBeInTheDocument()
+    expect(mockCreateAgreementLink).not.toHaveBeenCalled()
+
+    fireEvent.change(screen.getByDisplayValue('בחר סוג'), { target: { value: 'type2' } })
+    fireEvent.change(screen.getByDisplayValue('בחר חבילה'), { target: { value: 'pkg3' } })
+    expect(screen.getByDisplayValue('40')).toBeInTheDocument()
+    fireEvent.click(screen.getByText('צור קישור'))
+    await waitFor(() => expect(mockCreateAgreementLink).toHaveBeenCalledWith('client-1',
+      expect.objectContaining({ photoshootTypeName: 'צילום משפחה', packageName: 'משפחה קלאסית', photoCount: 40 }),
+      expect.objectContaining({ photoshootTypeId: 'type2', packageId: 'pkg3' })))
+  })
+
+  it('changing the package in the editor applies the package photo count and album', () => {
+    renderModal()
+    expect(screen.getByDisplayValue('50')).toBeInTheDocument()
+    fireEvent.change(screen.getByDisplayValue('חבילה בסיסית'), { target: { value: 'pkg2' } })
+    expect(screen.getByDisplayValue('100')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('30x30')).toBeInTheDocument()
   })
 
   it('pre-fills overrides from package data when opened', () => {

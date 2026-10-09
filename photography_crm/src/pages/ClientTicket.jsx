@@ -288,9 +288,6 @@ export default function ClientTicket() {
   }
 
   const needsTypeHint = !form.photoshootTypeId ? 'יש לבחור סוג צילום בפרטי הצילום תחילה' : null
-  const agreementHint = !form.photoshootTypeId
-    ? 'יש לבחור סוג צילום וחבילה בפרטי הצילום תחילה'
-    : !form.packageId ? 'יש לבחור חבילה בפרטי הצילום תחילה' : null
 
   if (loading) return <div className="text-center py-20 text-gray-400">טוען...</div>
   if (!client) return <div className="text-center py-20 text-gray-500">לקוח לא נמצא</div>
@@ -430,8 +427,7 @@ export default function ClientTicket() {
             {activeLinkId ? (
               <CopyLink url={agreementUrl(activeLinkId)} />
             ) : (
-              <Button onClick={() => setShowAgreementEditor(true)} disabled={!form.packageId}
-                disabledReason={agreementHint}>
+              <Button onClick={() => setShowAgreementEditor(true)}>
                 צור / ערוך הסכם
               </Button>
             )}
@@ -514,7 +510,6 @@ export default function ClientTicket() {
         isOpen={showAgreementEditor}
         onClose={() => setShowAgreementEditor(false)}
         client={{ ...client, ...form }}
-        packages={packages}
         types={types}
         onLinkCreated={(linkId, synced) => {
           setActiveLinkId(linkId)

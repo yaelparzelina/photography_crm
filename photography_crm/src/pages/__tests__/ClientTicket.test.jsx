@@ -363,12 +363,13 @@ describe('ClientTicket', () => {
     expect(push).toBeDefined()
   })
 
-  it('shows hover hint explaining why agreement button is disabled', () => {
+  it('agreement editor can be opened even when no package is selected', () => {
     setupOnSnapshot(makeSnapshot({ data: { ...clientData, packageId: '' } }))
     renderTicket()
     const btn = screen.getByText('צור / ערוך הסכם')
-    expect(btn).toBeDisabled()
-    expect(btn.parentElement).toHaveTextContent('יש לבחור חבילה בפרטי הצילום תחילה')
+    expect(btn).not.toBeDisabled()
+    fireEvent.click(btn)
+    expect(screen.getByTestId('agreement-editor-modal')).toBeInTheDocument()
   })
 
   it('does not show hint when agreement button is enabled', () => {

@@ -8,15 +8,15 @@ import Button from '../components/ui/Button'
 import IconButton from '../components/ui/IconButton'
 import Card from '../components/ui/Card'
 import Field from '../components/ui/Field'
-import Segmented from '../components/ui/Segmented'
-import CheckboxGroup from '../components/ui/CheckboxGroup'
+import MultiSelect from '../components/ui/MultiSelect'
+import DateRangeFilter from '../components/ui/DateRangeFilter'
 import CopyLink from '../components/ui/CopyLink'
 import StatusBadge from '../components/ui/StatusBadge'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
 import { inputClass, cardClass } from '../components/ui/styles'
 import { STATUS_OPTIONS, IN_PROGRESS_PRESET } from '../utils/statusConfig'
 import { getClientName } from '../utils/clientUtils'
-import { formatDate, toInputDate, fromInputDate } from '../utils/dateUtils'
+import { formatDate, toInputDate } from '../utils/dateUtils'
 import {
   NEWSLETTER_STATUS, CONSENT_SOURCE_LABELS, UNSUBSCRIBE_SOURCE_LABELS, AD_SUBJECT_PREFIX, GMAIL_DAILY_LIMIT,
   getNewsletterStatus, filterMailingList, canReceive, normalizeEmail, buildMailingCsv,
@@ -95,6 +95,13 @@ export default function MailingList() {
     clients.forEach((c) => { out[getNewsletterStatus(c)]++ })
     return out
   }, [clients])
+
+  const filtersActive = !!(search || typeIds.length || statuses.length || from || to || newsletterStatus !== 'subscribed')
+
+  function clearFilters() {
+    setSearch(''); setTypeIds([]); setStatuses([]); setFrom(null); setTo(null); setNewsletterStatus('subscribed')
+    setDeselected(new Set())
+  }
 
   function toggleRow(id) {
     setDeselected((s) => {
@@ -194,34 +201,25 @@ export default function MailingList() {
         </div>
       )}
 
-      <Card title="סינון">
-        <div className="space-y-5">
-          <div className="flex flex-wrap items-end gap-4">
-            <Field label="ניוזלטר">
-              <div className="flex items-center min-h-[42px]">
-                <Segmented label="סטטוס ניוזלטר" options={NEWSLETTER_FILTERS} value={newsletterStatus}
-                  onChange={(v) => { setNewsletterStatus(v); setDeselected(new Set()) }} />
-              </div>
-            </Field>
-            <Field label="חיפוש" className="flex-1 min-w-[12rem]">
-              <input className={inputClass()} value={search} onChange={(e) => setSearch(e.target.value)} placeholder="שם, מייל או טלפון" />
-            </Field>
-            <Field label="צילום מתאריך">
-              <input type="date" max="9999-12-31" className={inputClass()} value={toInputDate(from)}
-                onChange={(e) => setFrom(fromInputDate(e.target.value))} />
-            </Field>
-            <Field label="עד תאריך">
-              <input type="date" max="9999-12-31" className={inputClass()} value={toInputDate(to)}
-                onChange={(e) => setTo(fromInputDate(e.target.value))} />
-            </Field>
-          </div>
-          <CheckboxGroup label="סוג צילום" options={typeOptions} value={typeIds} onChange={setTypeIds} />
-          <CheckboxGroup label="סטטוס לקוח" options={STATUS_OPTIONS} value={statuses} onChange={setStatuses}
-            presets={[IN_PROGRESS_PRESET]} />
-        </div>
-      </Card>
+      {/* Filters */}
+      <div className="flex flex-wrap items-center gap-2">
+        <input className={`${inputClass()} flex-1 min-w-[12rem] !w-auto`} value={search}
+          onChange={(e) => setSearch(e.target.value)} placeholder="חיפוש לפי שם, מייל או טלפון" aria-label="חיפוש" />
+        <select className={`${inputClass()} !w-auto`} value={newsletterStatus} aria-label="סטטוס ניוזלטר"
+          onChange={(e) => { setNewsletterStatus(e.target.value); setDeselected(new Set()) }}>
+          {NEWSLETTER_FILTERS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
+        <MultiSelect label="סוג צילום" options={typeOptions} value={typeIds} onChange={setTypeIds} allLabel="הכל" />
+        <MultiSelect label="סטטוס" options={STATUS_OPTIONS} value={statuses} onChange={setStatuses}
+          allLabel="הכל" presets={[IN_PROGRESS_PRESET]} />
+        <DateRangeFilter label="תאריך צילום" from={from} to={to}
+          onChange={(r) => { setFrom(r.from); setTo(r.to) }} />
+        {filtersActive && (
+          <Button variant="link" size="sm" onClick={clearFilters} className="underline underline-offset-2">נקה סינון</Button>
+        )}
+      </div>
 
-      <Card>
+      <div className={`${cardClass} px-5 py-4`}>
         <div className="flex flex-wrap items-center gap-3">
           <p className="text-sm font-medium text-gray-900 me-auto">
             {recipientEmails.length} נמענים נבחרו
@@ -230,7 +228,7 @@ export default function MailingList() {
             )}
           </p>
           <Button onClick={openGmail} disabled={!recipientEmails.length} disabledReason={noRecipientsHint}>
-            <Mail className="w-4 h-4" /> שלח בג׳ימייל (BCC)
+            <Mail className="w-4 h-4" /> שלח בג׳ימייל
           </Button>
           <Button variant="secondary" onClick={exportCsv} disabled={!recipientEmails.length} disabledReason={noRecipientsHint}>
             <Download className="w-4 h-4" /> ייצוא לקובץ
@@ -239,14 +237,19 @@ export default function MailingList() {
             {copied ? <><Check className="w-4 h-4 text-green-600" /> הועתק!</> : <><Copy className="w-4 h-4" /> העתק כתובות</>}
           </Button>
         </div>
-        <p className="text-xs text-gray-500 mt-3 leading-relaxed">
-          ג׳ימייל ייפתח עם הנמענים בעותק מוסתר (BCC), שורת נושא שמתחילה ב״{AD_SUBJECT_PREFIX.trim()}״ (חובה לפי חוק הספאם)
-          וחתימה עם קישור ההסרה. הקובץ מתאים לייבוא ל-Mailchimp, MailerLite ו-Brevo.
-        </p>
-        <div className="mt-4 pt-4 border-t border-gray-50">
-          <p className="text-sm font-medium text-gray-800 mb-2">קישור הסרה מרשימת התפוצה (להדבקה בסוף כל דיוור)</p>
-          <CopyLink url={unsubscribeUrl()} />
-        </div>
+
+        <details className="mt-3 group">
+          <summary className="text-xs text-gray-500 hover:text-gray-800 cursor-pointer select-none w-fit">
+            קישור ההסרה ופרטים על השליחה
+          </summary>
+          <div className="mt-3 space-y-3">
+            <p className="text-xs text-gray-500 leading-relaxed">
+              ג׳ימייל ייפתח עם הנמענים בעותק מוסתר (BCC), שורת נושא שמתחילה ב״{AD_SUBJECT_PREFIX.trim()}״ (חובה לפי חוק הספאם)
+              וחתימה עם קישור ההסרה. הקובץ מתאים לייבוא ל-Mailchimp, MailerLite ו-Brevo.
+            </p>
+            <CopyLink url={unsubscribeUrl()} />
+          </div>
+        </details>
 
         {logForm && (
           <div className="mt-4 pt-4 border-t border-gray-50">
@@ -264,7 +267,7 @@ export default function MailingList() {
             </div>
           </div>
         )}
-      </Card>
+      </div>
 
       <div className={`${cardClass} overflow-x-auto`}>
         <table className="w-full">
