@@ -228,7 +228,7 @@ export default function MailingList() {
             )}
           </p>
           <Button onClick={openGmail} disabled={!recipientEmails.length} disabledReason={noRecipientsHint}>
-            <Mail className="w-4 h-4" /> שלח בג׳ימייל
+            <Mail className="w-4 h-4" /> שלח במייל
           </Button>
           <Button variant="secondary" onClick={exportCsv} disabled={!recipientEmails.length} disabledReason={noRecipientsHint}>
             <Download className="w-4 h-4" /> ייצוא לקובץ

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { ChevronDown, Check } from 'lucide-react'
+import { ChevronDown } from 'lucide-react'
 
 // A drop-down list (looks like a <select>) where several options can be ticked.
 // An empty selection means "no filter" and shows `allLabel`.
@@ -33,6 +33,12 @@ export default function MultiSelect({ label, options, value, onChange, allLabel 
     onChange(value.includes(v) ? value.filter((x) => x !== v) : [...value, v])
   }
 
+  // A preset checkbox ticks/unticks its whole group; half-ticked when only part of the group is selected
+  function togglePreset(p) {
+    const all = p.values.every((v) => value.includes(v))
+    onChange(all ? value.filter((v) => !p.values.includes(v)) : [...new Set([...value, ...p.values])])
+  }
+
   const rowClass = 'flex w-full items-center gap-2.5 px-3 py-2 text-sm text-start hover:bg-gray-50 cursor-pointer'
 
   return (
@@ -46,11 +52,18 @@ export default function MultiSelect({ label, options, value, onChange, allLabel 
       {open && (
         <div role="listbox" aria-multiselectable="true" aria-label={label}
           className="absolute top-full start-0 mt-1 z-30 min-w-full w-max max-w-[90vw] max-h-[min(30rem,70vh)] overflow-y-auto bg-white border border-gray-200 rounded-xl shadow-lg py-1">
-          {presets.map((p) => (
-            <button key={p.label} type="button" onClick={() => onChange(p.values)} className={`${rowClass} font-medium text-gray-900`}>
-              <Check className={`w-4 h-4 ${matchingPreset === p ? 'text-gray-900' : 'text-transparent'}`} /> {p.label}
-            </button>
-          ))}
+          {presets.map((p) => {
+            const all = p.values.every((v) => value.includes(v))
+            const some = p.values.some((v) => value.includes(v))
+            return (
+              <label key={p.label} role="option" aria-selected={all} className={`${rowClass} font-medium text-gray-900`}>
+                <input type="checkbox" className="w-4 h-4 accent-gray-900" checked={all}
+                  ref={(el) => { if (el) el.indeterminate = some && !all }}
+                  onChange={() => togglePreset(p)} />
+                {p.label}
+              </label>
+            )
+          })}
           {presets.length > 0 && <div className="my-1 border-t border-gray-100" />}
           {options.map((o) => (
             <label key={o.value} role="option" aria-selected={value.includes(o.value)} className={`${rowClass} text-gray-700`}>

@@ -11,7 +11,11 @@ select {
   background-repeat: no-repeat;
   background-position: left 0.6rem center;
   background-size: 1rem 1rem;
-  padding-inline-end: 2rem;
+}
+
+/* Room for the chevron. Higher specificity than padding utilities (e.g. pe-4) so text never runs under it */
+select:not([multiple]) {
+  padding-inline-end: 2.25rem;
 }
 
 /* Date inputs: align text/placeholder near the calendar icon on the right */

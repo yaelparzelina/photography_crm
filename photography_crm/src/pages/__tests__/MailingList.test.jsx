@@ -82,7 +82,8 @@ describe('MailingList', () => {
     const statuses = screen.getByRole('listbox', { name: 'סטטוס' })
     fireEvent.click(within(statuses).getByLabelText('הסתיים'))
     expect(screen.queryByText('רון כהן')).not.toBeInTheDocument()
-    fireEvent.click(within(statuses).getByText('הכל בתהליך'))
+    fireEvent.click(within(statuses).getByLabelText('הסתיים'))
+    fireEvent.click(within(statuses).getByLabelText('הכל בתהליך'))
     expect(screen.getByText('רון כהן')).toBeInTheDocument()
     expect(screen.queryByText('דנה לוי')).not.toBeInTheDocument()
   })
@@ -90,7 +91,7 @@ describe('MailingList', () => {
   it('opens Gmail with the selected recipients in BCC, ad subject and unsubscribe footer', () => {
     renderPage()
     fireEvent.click(screen.getByLabelText('בחר את רון כהן'))
-    fireEvent.click(screen.getByText(/שלח בג׳ימייל/))
+    fireEvent.click(screen.getByText(/שלח במייל/))
     const url = openSpy.mock.calls[0][0]
     const bcc = decodeURIComponent(url.split('bcc=')[1].split('&')[0])
     expect(bcc).toBe('dana@example.com,shira@example.com')
@@ -100,7 +101,7 @@ describe('MailingList', () => {
 
   it('logs a send after opening Gmail', async () => {
     renderPage()
-    fireEvent.click(screen.getByText(/שלח בג׳ימייל/))
+    fireEvent.click(screen.getByText(/שלח במייל/))
     fireEvent.change(screen.getByPlaceholderText(/מבצע צילומי משפחה/), { target: { value: 'מבצע חגים' } })
     fireEvent.click(screen.getByText('תעד שליחה'))
     await waitFor(() => expect(mockLogSend).toHaveBeenCalledWith(expect.objectContaining({
