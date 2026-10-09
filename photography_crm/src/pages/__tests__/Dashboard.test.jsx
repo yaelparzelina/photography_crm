@@ -170,11 +170,19 @@ describe('Dashboard', () => {
     expect(screen.getByText('שרה כהן')).toBeInTheDocument()
   })
 
-  it('filters clients by status dropdown', () => {
+  it('filters clients by several statuses with checkboxes, and "נקה" shows all again', () => {
     renderDashboard()
-    const select = screen.getByDisplayValue('כל הסטטוסים')
-    fireEvent.change(select, { target: { value: 'done' } })
+    fireEvent.click(screen.getByRole('button', { name: /כל הסטטוסים/ }))
+    const panel = screen.getByRole('dialog', { name: 'סינון לפי סטטוס' })
+    fireEvent.click(within(panel).getByLabelText('הסתיים'))
     expect(screen.queryByText('ישראל ישראלי')).not.toBeInTheDocument()
+    expect(screen.getByText('שרה כהן')).toBeInTheDocument()
+    fireEvent.click(within(panel).getByLabelText('ליד חדש'))
+    expect(screen.getByText('ישראל ישראלי')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /2 סטטוסים/ })).toBeInTheDocument()
+    fireEvent.click(within(panel).getByText('נקה'))
+    expect(within(panel).getByLabelText('הסתיים')).not.toBeChecked()
+    expect(screen.getByText('ישראל ישראלי')).toBeInTheDocument()
     expect(screen.getByText('שרה כהן')).toBeInTheDocument()
   })
 
@@ -185,7 +193,14 @@ describe('Dashboard', () => {
       updateClient: vi.fn(),
     })
     renderDashboard()
-    fireEvent.change(screen.getByDisplayValue('כל הסטטוסים'), { target: { value: 'in_progress' } })
+    fireEvent.click(screen.getByRole('button', { name: /כל הסטטוסים/ }))
+    const panel = screen.getByRole('dialog', { name: 'סינון לפי סטטוס' })
+    fireEvent.click(within(panel).getByText('הכל בתהליך'))
+    expect(within(panel).getByLabelText('ליד חדש')).toBeChecked()
+    expect(within(panel).getByLabelText('עריכה בתהליך')).toBeChecked()
+    expect(within(panel).getByLabelText('הסתיים')).not.toBeChecked()
+    expect(within(panel).getByLabelText('לא סגר')).not.toBeChecked()
+    expect(screen.getByRole('button', { expanded: true })).toHaveTextContent('הכל בתהליך')
     expect(screen.getByText('ישראל ישראלי')).toBeInTheDocument()
     expect(screen.queryByText('שרה כהן')).not.toBeInTheDocument()
     expect(screen.queryByText('דנה לוי')).not.toBeInTheDocument()

@@ -76,7 +76,8 @@ describe('App smoke (logged in)', () => {
   it('dashboard renders clients and the in-progress filter', () => {
     renderAt('/dashboard')
     expect(screen.getByText('לקוח ישן')).toBeInTheDocument()
-    fireEvent.change(screen.getByDisplayValue('כל הסטטוסים'), { target: { value: 'in_progress' } })
+    fireEvent.click(screen.getByRole('button', { name: /כל הסטטוסים/ }))
+    fireEvent.click(screen.getByText('הכל בתהליך'))
     expect(screen.queryByText('דנה לוי')).not.toBeInTheDocument()
     fireEvent.click(screen.getByText('לקוח חדש'))
     expect(screen.getByText('צור לקוח')).toBeInTheDocument()

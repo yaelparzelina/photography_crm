@@ -27,9 +27,7 @@ service cloud.firestore {
              .hasOnly(['email', 'agreementSigned', 'agreementSignedAt', 'status',
                        'newsletterConsent', 'newsletterConsentAt', 'newsletterConsentSource',
                        'newsletterUnsubscribedAt', 'newsletterUnsubscribeSource'])
-        // The signing page may only opt in, never unsubscribe someone
-        && (request.resource.data.get('newsletterConsent', null) == resource.data.get('newsletterConsent', null)
-            || request.resource.data.newsletterConsent == true);
+        && request.resource.data.get('newsletterConsent', false) is bool;
     }
 
     // Public: create (never overwrite) the signed copy of an agreement.

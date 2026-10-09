@@ -72,14 +72,20 @@ export default function ClientSigning() {
         agreementSigned: true,
         agreementSignedAt: serverTimestamp(),
         status: 'agreement_signed',
-        // Only an opt-in is recorded here; unticking never unsubscribes an existing subscriber
-        ...(newsletter && {
-          newsletterConsent: true,
-          newsletterConsentAt: serverTimestamp(),
-          newsletterConsentSource: 'agreement',
-          newsletterUnsubscribedAt: null,
-          newsletterUnsubscribeSource: null,
-        }),
+        // Ticked = subscribe; unticked = the client doesn't want it (removes an existing subscription too)
+        ...(newsletter
+          ? {
+              newsletterConsent: true,
+              newsletterConsentAt: serverTimestamp(),
+              newsletterConsentSource: 'agreement',
+              newsletterUnsubscribedAt: null,
+              newsletterUnsubscribeSource: null,
+            }
+          : {
+              newsletterConsent: false,
+              newsletterUnsubscribedAt: serverTimestamp(),
+              newsletterUnsubscribeSource: 'agreement',
+            }),
       })
       await batch.commit()
       setSuccess(true)

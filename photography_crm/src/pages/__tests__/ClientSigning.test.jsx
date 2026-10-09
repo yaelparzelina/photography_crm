@@ -190,7 +190,7 @@ describe('ClientSigning', () => {
     expect(mockBatchSet).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ newsletterConsent: true }))
   })
 
-  it('unticking the newsletter box does not subscribe (and never unsubscribes)', async () => {
+  it('unticking the newsletter box records that the client does not want it (removes a subscription)', async () => {
     mockGetDoc.mockResolvedValue(makeSnap())
     render(<ClientSigning />)
     await waitFor(() => screen.getByPlaceholderText('your@email.com'))
@@ -199,7 +199,9 @@ describe('ClientSigning', () => {
     fireEvent.click(screen.getByText('mock-sign'))
     fireEvent.submit(screen.getByPlaceholderText('your@email.com').closest('form'))
     await waitFor(() => expect(mockBatchCommit).toHaveBeenCalled())
-    expect(mockBatchUpdate.mock.calls[0][1]).not.toHaveProperty('newsletterConsent')
+    expect(mockBatchUpdate).toHaveBeenCalledWith('clients/client-1', expect.objectContaining({
+      newsletterConsent: false, newsletterUnsubscribedAt: 'SERVER_TS', newsletterUnsubscribeSource: 'agreement',
+    }))
     expect(mockBatchSet).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ newsletterConsent: false }))
   })
 

@@ -13,3 +13,8 @@ export const STATUS_OPTIONS = Object.entries(STATUS_CONFIG).map(([value, { label
   value,
   label,
 }))
+
+// Statuses that mean the client is no longer in progress
+export const CLOSED_STATUSES = ['done', 'didnt_book']
+export const IN_PROGRESS_STATUSES = STATUS_OPTIONS.map((o) => o.value).filter((v) => !CLOSED_STATUSES.includes(v))
+export const IN_PROGRESS_PRESET = { label: 'הכל בתהליך', values: IN_PROGRESS_STATUSES }

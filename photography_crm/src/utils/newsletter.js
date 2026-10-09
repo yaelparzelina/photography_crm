@@ -23,6 +23,7 @@ export const CONSENT_SOURCE_LABELS = {
 export const UNSUBSCRIBE_SOURCE_LABELS = {
   owner: 'הוסר ידנית',
   link: 'דרך קישור ההסרה',
+  agreement: 'סירב/ה בחתימה על הסכם',
 }
 
 // --- Status ---
@@ -62,8 +63,9 @@ export function filterMailingList(clients, { newsletterStatus = 'subscribed', ty
   const q = (search || '').trim().toLowerCase()
   return clients.filter((c) => {
     if (newsletterStatus !== 'all' && getNewsletterStatus(c) !== newsletterStatus) return false
-    if (typeIds && !typeIds.includes(c.photoshootTypeId || '')) return false
-    if (statuses && !statuses.includes(c.status || 'new_lead')) return false
+    // Empty selections mean "no filter"
+    if (typeIds?.length && !typeIds.includes(c.photoshootTypeId || '')) return false
+    if (statuses?.length && !statuses.includes(c.status || 'new_lead')) return false
     if (from || to) {
       const shoot = toDate(c.shootDate)
       if (!shoot) return false

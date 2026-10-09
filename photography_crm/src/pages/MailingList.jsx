@@ -14,7 +14,7 @@ import CopyLink from '../components/ui/CopyLink'
 import StatusBadge from '../components/ui/StatusBadge'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
 import { inputClass, cardClass } from '../components/ui/styles'
-import { STATUS_OPTIONS } from '../utils/statusConfig'
+import { STATUS_OPTIONS, IN_PROGRESS_PRESET } from '../utils/statusConfig'
 import { getClientName } from '../utils/clientUtils'
 import { formatDate, toInputDate, fromInputDate } from '../utils/dateUtils'
 import {
@@ -70,8 +70,8 @@ export default function MailingList() {
 
   const [newsletterStatus, setNewsletterStatus] = useState('subscribed')
   const [search, setSearch] = useState('')
-  const [typeIds, setTypeIds] = useState(null) // null = all
-  const [statuses, setStatuses] = useState(null) // null = all
+  const [typeIds, setTypeIds] = useState([]) // empty = all types
+  const [statuses, setStatuses] = useState([]) // empty = all statuses
   const [from, setFrom] = useState(null)
   const [to, setTo] = useState(null)
   const [deselected, setDeselected] = useState(new Set())
@@ -80,8 +80,6 @@ export default function MailingList() {
 
   const typeMap = useMemo(() => Object.fromEntries(types.map((t) => [t.id, t.name])), [types])
   const typeOptions = useMemo(() => [...types.map((t) => ({ value: t.id, label: t.name })), { value: '', label: 'ללא סוג' }], [types])
-  const allTypeValues = typeOptions.map((o) => o.value)
-  const allStatusValues = STATUS_OPTIONS.map((o) => o.value)
 
   const rows = useMemo(() => filterMailingList(clients, {
     newsletterStatus, typeIds, statuses, from, to, search,
@@ -116,8 +114,8 @@ export default function MailingList() {
 
   function describeFilters() {
     const parts = []
-    if (typeIds) parts.push(`סוגים: ${typeIds.map((id) => typeMap[id] || 'ללא סוג').join(', ') || '—'}`)
-    if (statuses) parts.push(`סטטוסים: ${statuses.map((s) => STATUS_OPTIONS.find((o) => o.value === s)?.label).join(', ') || '—'}`)
+    if (typeIds.length) parts.push(`סוגים: ${typeIds.map((id) => typeMap[id] || 'ללא סוג').join(', ')}`)
+    if (statuses.length) parts.push(`סטטוסים: ${statuses.map((s) => STATUS_OPTIONS.find((o) => o.value === s)?.label).join(', ')}`)
     if (from || to) parts.push(`צילום: ${from ? formatDate(from) : '…'}–${to ? formatDate(to) : '…'}`)
     if (search) parts.push(`חיפוש: ${search}`)
     return parts.join(' · ') || 'כל המנויים'
@@ -217,10 +215,9 @@ export default function MailingList() {
                 onChange={(e) => setTo(fromInputDate(e.target.value))} />
             </Field>
           </div>
-          <CheckboxGroup label="סוג צילום" options={typeOptions} value={typeIds ?? allTypeValues}
-            onChange={(v) => setTypeIds(v.length === allTypeValues.length ? null : v)} />
-          <CheckboxGroup label="סטטוס לקוח" options={STATUS_OPTIONS} value={statuses ?? allStatusValues}
-            onChange={(v) => setStatuses(v.length === allStatusValues.length ? null : v)} />
+          <CheckboxGroup label="סוג צילום" options={typeOptions} value={typeIds} onChange={setTypeIds} />
+          <CheckboxGroup label="סטטוס לקוח" options={STATUS_OPTIONS} value={statuses} onChange={setStatuses}
+            presets={[IN_PROGRESS_PRESET]} />
         </div>
       </Card>
 

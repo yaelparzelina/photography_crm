@@ -5,6 +5,7 @@ import { Plus, Search, ChevronUp, ChevronDown, X } from 'lucide-react'
 import { useClients } from '../hooks/useClients'
 import { usePhotoshootTypes } from '../hooks/usePhotoshootTypes'
 import NewClientModal from '../components/NewClientModal'
+import StatusFilter from '../components/StatusFilter'
 import Button from '../components/ui/Button'
 import IconButton from '../components/ui/IconButton'
 import { cardClass } from '../components/ui/styles'
@@ -96,9 +97,6 @@ function SortIcon({ field, sortField, sortDir }) {
   return sortDir === 'asc' ? <ChevronUp className="w-3 h-3 inline" /> : <ChevronDown className="w-3 h-3 inline" />
 }
 
-// Statuses that mean the client is no longer in progress
-const CLOSED_STATUSES = ['done', 'didnt_book']
-
 const thClass = 'px-4 py-3 text-xs font-medium text-gray-500 cursor-pointer hover:text-gray-900 select-none'
 
 export default function Dashboard() {
@@ -106,7 +104,7 @@ export default function Dashboard() {
   const { clients, loading, updateClient } = useClients()
   const { types } = usePhotoshootTypes()
   const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
+  const [statusFilter, setStatusFilter] = useState([]) // empty = all statuses
   const [sortField, setSortField] = useState('createdAt')
   const [sortDir, setSortDir] = useState('desc')
   const [showNew, setShowNew] = useState(false)
@@ -129,8 +127,7 @@ export default function Dashboard() {
           c.phone?.includes(q)
       )
     }
-    if (statusFilter === 'in_progress') list = list.filter((c) => !CLOSED_STATUSES.includes(c.status))
-    else if (statusFilter !== 'all') list = list.filter((c) => c.status === statusFilter)
+    if (statusFilter.length) list = list.filter((c) => statusFilter.includes(c.status || 'new_lead'))
     list.sort((a, b) => {
       let av = a[sortField], bv = b[sortField]
       if (av == null && bv == null) return 0
@@ -174,12 +171,7 @@ export default function Dashboard() {
             </IconButton>
           )}
         </div>
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
-          className="border border-gray-200 rounded-lg px-4 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-300">
-          <option value="all">כל הסטטוסים</option>
-          <option value="in_progress">כל התהליכים</option>
-          {STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </select>
+        <StatusFilter value={statusFilter} onChange={setStatusFilter} />
       </div>
 
       <div className={`${cardClass} overflow-hidden`}>

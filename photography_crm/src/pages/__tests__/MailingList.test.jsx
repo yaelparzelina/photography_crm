@@ -66,20 +66,24 @@ describe('MailingList', () => {
   it('filters by a group of photoshoot types with checkboxes (bat mitzvah + family only)', () => {
     renderPage()
     const types = screen.getByRole('group', { name: 'סוג צילום' })
-    fireEvent.click(within(types).getByLabelText('ניו בורן'))
+    expect(screen.getByText('3 נמענים נבחרו')).toBeInTheDocument()
+    fireEvent.click(within(types).getByLabelText('בת מצווה'))
+    fireEvent.click(within(types).getByLabelText('משפחה'))
     expect(screen.queryByText('שירה')).not.toBeInTheDocument()
-    expect(screen.getByText('2 נמענים נבחרו')).toBeInTheDocument()
-    fireEvent.click(within(types).getByLabelText('בחר הכל'))
+    fireEvent.click(within(types).getByText('נקה'))
     expect(screen.getByText('שירה')).toBeInTheDocument()
-    fireEvent.click(within(types).getByLabelText('בחר הכל'))
-    expect(screen.getByText('לא נמצאו לקוחות')).toBeInTheDocument()
+    fireEvent.click(within(types).getByText('בחר הכל'))
+    expect(within(types).getByLabelText('ניו בורן')).toBeChecked()
   })
 
   it('filters by client status', () => {
     renderPage()
     const statuses = screen.getByRole('group', { name: 'סטטוס לקוח' })
-    fireEvent.click(within(statuses).getByLabelText('ליד חדש'))
+    fireEvent.click(within(statuses).getByLabelText('הסתיים'))
     expect(screen.queryByText('רון כהן')).not.toBeInTheDocument()
+    fireEvent.click(within(statuses).getByText('הכל בתהליך'))
+    expect(screen.getByText('רון כהן')).toBeInTheDocument()
+    expect(screen.queryByText('דנה לוי')).not.toBeInTheDocument()
   })
 
   it('opens Gmail with the selected recipients in BCC, ad subject and unsubscribe footer', () => {
