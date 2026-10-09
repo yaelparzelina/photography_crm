@@ -303,10 +303,11 @@ export default function MailingList() {
                       {getClientName(c) || '—'}
                     </Button>
                   </td>
-                  <td className={tdClass} dir="ltr">
-                    {c.email || <span className="text-amber-600 text-xs" dir="rtl">אין אימייל</span>}
+                  {/* Cells stay right-aligned like their headers; only the value itself is left-to-right */}
+                  <td className={tdClass}>
+                    {c.email ? <bdi dir="ltr">{c.email}</bdi> : <span className="text-amber-600 text-xs">אין אימייל</span>}
                   </td>
-                  <td className={tdClass} dir="ltr">{c.phone || '—'}</td>
+                  <td className={tdClass}>{c.phone ? <bdi dir="ltr">{c.phone}</bdi> : '—'}</td>
                   <td className={tdClass}>{typeMap[c.photoshootTypeId] || '—'}</td>
                   <td className={tdClass}>{formatDate(c.shootDate) || '—'}</td>
                   <td className={tdClass}><StatusBadge status={c.status || 'new_lead'} /></td>
