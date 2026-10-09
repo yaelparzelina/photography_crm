@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { collection, doc, query, where, orderBy, addDoc, updateDoc, serverTimestamp, writeBatch } from 'firebase/firestore'
+import { collection, doc, query, where, orderBy, addDoc, updateDoc, deleteDoc, serverTimestamp, writeBatch } from 'firebase/firestore'
 import { useCollection } from 'react-firebase-hooks/firestore'
 import { db } from '../firebase'
 import { normalizeEmail, consentChange } from '../utils/newsletter'
@@ -58,5 +58,9 @@ export function useNewsletterSends() {
     await addDoc(sendsRef, { ...data, sentAt: serverTimestamp() })
   }
 
-  return { sends, logSend }
+  async function deleteSend(id) {
+    await deleteDoc(doc(db, 'newsletterSends', id))
+  }
+
+  return { sends, logSend, deleteSend }
 }

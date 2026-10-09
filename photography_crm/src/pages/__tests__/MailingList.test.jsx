@@ -13,10 +13,12 @@ vi.mock('../../hooks/usePhotoshootTypes', () => ({
 }))
 const mockLogSend = vi.hoisted(() => vi.fn(() => Promise.resolve()))
 const mockDismiss = vi.hoisted(() => vi.fn())
+const mockDeleteSend = vi.hoisted(() => vi.fn(() => Promise.resolve()))
+const mockSends = vi.hoisted(() => ({ value: [] }))
 const mockPending = vi.hoisted(() => ({ value: [] }))
 vi.mock('../../hooks/useNewsletter', () => ({
   usePendingUnsubscribes: () => ({ requests: mockPending.value, dismiss: mockDismiss }),
-  useNewsletterSends: () => ({ sends: [], logSend: mockLogSend }),
+  useNewsletterSends: () => ({ sends: mockSends.value, logSend: mockLogSend, deleteSend: mockDeleteSend }),
 }))
 const mockNavigate = vi.hoisted(() => vi.fn())
 vi.mock('react-router-dom', async () => ({ ...(await vi.importActual('react-router-dom')), useNavigate: () => mockNavigate }))
@@ -41,6 +43,7 @@ describe('MailingList', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockPending.value = []
+    mockSends.value = []
     mockUseClients.mockReturnValue({ clients, loading: false })
     openSpy = vi.spyOn(window, 'open').mockImplementation(() => null)
     Object.defineProperty(navigator, 'clipboard', { value: { writeText: vi.fn(() => Promise.resolve()) }, configurable: true })
@@ -106,6 +109,15 @@ describe('MailingList', () => {
     expect(screen.getByText('גיל')).toBeInTheDocument()
     expect(screen.getByText(/דרך קישור ההסרה/)).toBeInTheDocument()
     expect(screen.getByLabelText('בחר את גיל')).toBeDisabled()
+  })
+
+  it('deletes a send log entry after confirming', async () => {
+    mockSends.value = [{ id: 's1', subject: 'בדיקת ממשק', recipientCount: 2, method: 'gmail', filters: '', sentAt: ts('2025-09-01') }]
+    renderPage()
+    fireEvent.click(screen.getByRole('button', { name: 'מחק תיעוד' }))
+    expect(screen.getByText(/למחוק את התיעוד "בדיקת ממשק"/)).toBeInTheDocument()
+    fireEvent.click(screen.getByText('מחק'))
+    await waitFor(() => expect(mockDeleteSend).toHaveBeenCalledWith('s1'))
   })
 
   it('lists unsubscribe requests that did not match any client', () => {

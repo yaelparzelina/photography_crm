@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Mail, Download, Copy, Check, AlertTriangle, X } from 'lucide-react'
+import { Mail, Download, Copy, Check, AlertTriangle, X, Trash2 } from 'lucide-react'
 import { useClients } from '../hooks/useClients'
 import { usePhotoshootTypes } from '../hooks/usePhotoshootTypes'
 import { usePendingUnsubscribes, useNewsletterSends } from '../hooks/useNewsletter'
@@ -12,6 +12,7 @@ import Segmented from '../components/ui/Segmented'
 import CheckboxGroup from '../components/ui/CheckboxGroup'
 import CopyLink from '../components/ui/CopyLink'
 import StatusBadge from '../components/ui/StatusBadge'
+import ConfirmDialog from '../components/ui/ConfirmDialog'
 import { inputClass, cardClass } from '../components/ui/styles'
 import { STATUS_OPTIONS } from '../utils/statusConfig'
 import { getClientName } from '../utils/clientUtils'
@@ -64,7 +65,8 @@ export default function MailingList() {
   const { clients, loading } = useClients()
   const { types } = usePhotoshootTypes()
   const { requests: pendingUnsubscribes, dismiss } = usePendingUnsubscribes()
-  const { sends, logSend } = useNewsletterSends()
+  const { sends, logSend, deleteSend } = useNewsletterSends()
+  const [deleteSendTarget, setDeleteSendTarget] = useState(null)
 
   const [newsletterStatus, setNewsletterStatus] = useState('subscribed')
   const [search, setSearch] = useState('')
@@ -322,16 +324,31 @@ export default function MailingList() {
         ) : (
           <ul className="divide-y divide-gray-50">
             {sends.map((s) => (
-              <li key={s.id} className="py-2.5 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm">
-                <span className="text-gray-400 text-xs">{formatDate(s.sentAt)}</span>
-                <span className="font-medium text-gray-900">{s.subject}</span>
-                <span className="text-gray-500">{s.recipientCount} נמענים · {s.method === 'gmail' ? 'ג׳ימייל' : 'ייצוא לקובץ'}</span>
-                <span className="text-gray-400 text-xs basis-full">{s.filters}</span>
+              <li key={s.id} className="py-2.5 flex items-start gap-3">
+                <div className="flex-1 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm">
+                  <span className="text-gray-400 text-xs">{formatDate(s.sentAt)}</span>
+                  <span className="font-medium text-gray-900">{s.subject}</span>
+                  <span className="text-gray-500">{s.recipientCount} נמענים · {s.method === 'gmail' ? 'ג׳ימייל' : 'ייצוא לקובץ'}</span>
+                  <span className="text-gray-400 text-xs basis-full">{s.filters}</span>
+                </div>
+                <IconButton label="מחק תיעוד" variant="danger" onClick={() => setDeleteSendTarget(s)}>
+                  <Trash2 className="w-4 h-4" />
+                </IconButton>
               </li>
             ))}
           </ul>
         )}
       </Card>
+
+      <ConfirmDialog
+        isOpen={!!deleteSendTarget}
+        title="מחיקת תיעוד דיוור"
+        message={`למחוק את התיעוד "${deleteSendTarget?.subject}"? הדיוור עצמו לא יבוטל, רק הרישום שלו.`}
+        confirmLabel="מחק"
+        destructive
+        onConfirm={async () => { await deleteSend(deleteSendTarget.id); setDeleteSendTarget(null) }}
+        onCancel={() => setDeleteSendTarget(null)}
+      />
     </div>
   )
 }
