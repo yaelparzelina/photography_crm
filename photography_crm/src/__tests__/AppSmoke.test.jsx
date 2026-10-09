@@ -121,6 +121,19 @@ describe('App smoke (logged in)', () => {
     data.messageTemplates = []
   })
 
+  it('mailing list and public unsubscribe pages render', () => {
+    data.clients[1].newsletterConsent = true
+    data.clients[1].email = 'dana@example.com'
+    const { unmount } = renderAt('/dashboard/mailing-list')
+    expect(screen.getByRole('heading', { name: 'רשימת תפוצה' })).toBeInTheDocument()
+    expect(screen.getByText('dana@example.com')).toBeInTheDocument()
+    unmount()
+    renderAt('/unsubscribe')
+    expect(screen.getByText('הסרה מרשימת התפוצה')).toBeInTheDocument()
+    delete data.clients[1].newsletterConsent
+    delete data.clients[1].email
+  })
+
   it('settings packages tab renders and edits a package', () => {
     renderAt('/dashboard/settings')
     fireEvent.click(screen.getByText('חבילות'))

@@ -174,6 +174,35 @@ describe('ClientSigning', () => {
     expect(screen.getByText('ההסכם אושר בהצלחה. נהיה בקשר.')).toBeInTheDocument()
   })
 
+  it('newsletter box is ticked by default and records consent from the agreement', async () => {
+    mockGetDoc.mockResolvedValue(makeSnap())
+    render(<ClientSigning />)
+    await waitFor(() => screen.getByPlaceholderText('your@email.com'))
+    const box = screen.getByRole('checkbox', { name: /אשמח לקבל ניוזלטר/ })
+    expect(box).toBeChecked()
+    fireEvent.change(screen.getByPlaceholderText('your@email.com'), { target: { value: 'client@example.com' } })
+    fireEvent.click(screen.getByText('mock-sign'))
+    fireEvent.submit(box.closest('form'))
+    await waitFor(() => expect(mockBatchCommit).toHaveBeenCalled())
+    expect(mockBatchUpdate).toHaveBeenCalledWith('clients/client-1', expect.objectContaining({
+      newsletterConsent: true, newsletterConsentSource: 'agreement', newsletterConsentAt: 'SERVER_TS',
+    }))
+    expect(mockBatchSet).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ newsletterConsent: true }))
+  })
+
+  it('unticking the newsletter box does not subscribe (and never unsubscribes)', async () => {
+    mockGetDoc.mockResolvedValue(makeSnap())
+    render(<ClientSigning />)
+    await waitFor(() => screen.getByPlaceholderText('your@email.com'))
+    fireEvent.click(screen.getByRole('checkbox', { name: /אשמח לקבל ניוזלטר/ }))
+    fireEvent.change(screen.getByPlaceholderText('your@email.com'), { target: { value: 'client@example.com' } })
+    fireEvent.click(screen.getByText('mock-sign'))
+    fireEvent.submit(screen.getByPlaceholderText('your@email.com').closest('form'))
+    await waitFor(() => expect(mockBatchCommit).toHaveBeenCalled())
+    expect(mockBatchUpdate.mock.calls[0][1]).not.toHaveProperty('newsletterConsent')
+    expect(mockBatchSet).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ newsletterConsent: false }))
+  })
+
   it('shows error message if saving fails', async () => {
     mockGetDoc.mockResolvedValue(makeSnap())
     mockBatchCommit.mockRejectedValue(new Error('Firestore error'))

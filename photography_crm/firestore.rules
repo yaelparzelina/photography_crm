@@ -24,7 +24,12 @@ service cloud.firestore {
     match /clients/{clientId} {
       allow update: if request.auth == null
         && request.resource.data.diff(resource.data).affectedKeys()
-             .hasOnly(['email', 'agreementSigned', 'agreementSignedAt', 'status']);
+             .hasOnly(['email', 'agreementSigned', 'agreementSignedAt', 'status',
+                       'newsletterConsent', 'newsletterConsentAt', 'newsletterConsentSource',
+                       'newsletterUnsubscribedAt', 'newsletterUnsubscribeSource'])
+        // The signing page may only opt in, never unsubscribe someone
+        && (request.resource.data.get('newsletterConsent', null) == resource.data.get('newsletterConsent', null)
+            || request.resource.data.newsletterConsent == true);
     }
 
     // Public: create (never overwrite) the signed copy of an agreement.
@@ -34,11 +39,22 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/links/$(linkId)).data.clientId == clientId
         && get(/databases/$(database)/documents/links/$(linkId)).data.type == 'agreement'
         && get(/databases/$(database)/documents/links/$(linkId)).data.active == true
-        && request.resource.data.keys().hasOnly(['type', 'linkId', 'agreement', 'agreementText', 'email', 'signature', 'signedAt'])
+        && request.resource.data.keys().hasOnly(['type', 'linkId', 'agreement', 'agreementText', 'email', 'signature', 'signedAt',
+                                                  'newsletterConsent', 'newsletterConsentText'])
         && request.resource.data.linkId == linkId
         && request.resource.data.signedAt == request.time
         && request.resource.data.signature is string
         && request.resource.data.signature.size() < 800000;
+    }
+
+    // Public: request removal from the mailing list (write-only; matched to clients by the owner's app)
+    match /unsubscribeRequests/{requestId} {
+      allow create: if request.auth == null
+        && request.resource.data.keys().hasOnly(['email', 'processed', 'createdAt'])
+        && request.resource.data.email is string
+        && request.resource.data.email.size() < 200
+        && request.resource.data.processed == false
+        && request.resource.data.createdAt == request.time;
     }
   }
 }

@@ -292,11 +292,26 @@ describe('ClientTicket', () => {
     renderTicket()
     expect(screen.getByText('ימי עסקים למסירת התמונות')).toBeInTheDocument()
     expect(screen.getByPlaceholderText('10')).toHaveValue(null)
-    fireEvent.click(screen.getByRole('switch', { name: 'אישור פרסום' }))
+    fireEvent.click(screen.getByRole('switch', { name: 'אישור פרסום תמונות' }))
     fireEvent.click(screen.getByText('שמור שינויים'))
     await waitFor(() => {
       expect(mockUpdateDoc).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
         businessDays: 10, publicityApproved: true,
+      }))
+    })
+  })
+
+  it('newsletter consent toggle records date and manual source; photo publicity toggle is renamed', async () => {
+    setupOnSnapshot(makeSnapshot())
+    renderTicket()
+    expect(screen.getByText('לא ברשימת התפוצה')).toBeInTheDocument()
+    expect(screen.getByRole('switch', { name: 'אישור פרסום תמונות' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('switch', { name: 'מאשר/ת קבלת ניוזלטר והטבות' }))
+    expect(screen.getByText(/ברשימת התפוצה מ-.* · סומן ידנית/)).toBeInTheDocument()
+    fireEvent.click(screen.getByText('שמור שינויים'))
+    await waitFor(() => {
+      expect(mockUpdateDoc).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+        newsletterConsent: true, newsletterConsentSource: 'owner', newsletterConsentAt: expect.any(Date),
       }))
     })
   })

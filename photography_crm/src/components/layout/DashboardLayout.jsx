@@ -1,7 +1,9 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { signOut } from 'firebase/auth'
 import { auth } from '../../firebase'
-import { Camera, Users, Settings, LogOut, MessageCircle } from 'lucide-react'
+import { Camera, Users, Settings, LogOut, MessageCircle, Mail } from 'lucide-react'
+import { useClients } from '../../hooks/useClients'
+import { useUnsubscribeSync } from '../../hooks/useNewsletter'
 
 const navLinkClass = ({ isActive }) =>
   `flex items-center gap-1.5 text-sm transition-colors ${
@@ -10,6 +12,9 @@ const navLinkClass = ({ isActive }) =>
 
 export default function DashboardLayout() {
   const navigate = useNavigate()
+  const { clients, loading: clientsLoading } = useClients()
+  // Applies requests from the public unsubscribe page to the matching client records
+  useUnsubscribeSync(clients, clientsLoading)
 
   async function handleLogout() {
     try {
@@ -34,6 +39,9 @@ export default function DashboardLayout() {
           </NavLink>
           <NavLink to="/dashboard/messages" className={navLinkClass}>
             <MessageCircle className="w-4 h-4" /> הודעות ללקוח
+          </NavLink>
+          <NavLink to="/dashboard/mailing-list" className={navLinkClass}>
+            <Mail className="w-4 h-4" /> רשימת תפוצה
           </NavLink>
           <NavLink to="/dashboard/settings" className={navLinkClass}>
             <Settings className="w-4 h-4" /> הגדרות

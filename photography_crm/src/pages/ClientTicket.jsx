@@ -19,6 +19,7 @@ import Segmented from '../components/ui/Segmented'
 import AlbumFields from '../components/AlbumFields'
 import BusinessDaysField from '../components/BusinessDaysField'
 import { normalizeBusinessDays } from '../utils/delivery'
+import { consentChange, getNewsletterStatus, CONSENT_SOURCE_LABELS, UNSUBSCRIBE_SOURCE_LABELS } from '../utils/newsletter'
 import { normalizeAlbum } from '../utils/album'
 import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
@@ -84,8 +85,8 @@ export default function ClientTicket() {
       localStorage.setItem(`draft_${id}`, JSON.stringify(form, function (key, val) {
         const raw = this[key]
         if (raw instanceof Date || typeof raw?.toDate === 'function') {
-          const iso = toInputDate(raw)
-          return iso ? { _t: iso } : null
+          const date = raw.toDate ? raw.toDate() : raw
+          return Number.isNaN(date.getTime()) ? null : { _t: date.toISOString() }
         }
         return val
       }))
@@ -203,6 +204,13 @@ export default function ClientTicket() {
     }
   }
 
+  const newsletterStatus = getNewsletterStatus(form)
+  const newsletterNote = newsletterStatus === 'subscribed'
+    ? `ברשימת התפוצה מ-${formatDate(form.newsletterConsentAt)} · ${CONSENT_SOURCE_LABELS[form.newsletterConsentSource] || ''}`
+    : newsletterStatus === 'unsubscribed'
+      ? `הוסר/ה מרשימת התפוצה ב-${formatDate(form.newsletterUnsubscribedAt)} · ${UNSUBSCRIBE_SOURCE_LABELS[form.newsletterUnsubscribeSource] || ''}`
+      : 'לא ברשימת התפוצה'
+
   // Opens the messages page prefilled from what's currently on the card (saved or not)
   function openMessages() {
     navigate('/dashboard/messages', {
@@ -303,6 +311,11 @@ export default function ClientTicket() {
                 onChange={(v) => set('gender', v)} />
             </div>
           </Field>
+          <div className="sm:col-span-2">
+            <Toggle text="מאשר/ת קבלת ניוזלטר והטבות" checked={!!form.newsletterConsent}
+              onChange={(v) => { setForm((f) => ({ ...f, ...consentChange(v, 'owner') })); setDirty(true) }} />
+            <p className="text-xs text-gray-400 mt-1">{newsletterNote}</p>
+          </div>
         </div>
       </Card>
 
@@ -343,7 +356,7 @@ export default function ClientTicket() {
             <Toggle text="שילם מקדמה" checked={form.paidAdvance} onChange={(v) => set('paidAdvance', v)} />
           </div>
           <div className="flex items-center min-h-[42px]">
-            <Toggle text="אישור פרסום" checked={form.publicityApproved} onChange={(v) => set('publicityApproved', v)} />
+            <Toggle text="אישור פרסום תמונות" checked={form.publicityApproved} onChange={(v) => set('publicityApproved', v)} />
           </div>
           <AlbumFields data={albumData} onChange={setAlbum} className="sm:col-span-2" />
         </div>

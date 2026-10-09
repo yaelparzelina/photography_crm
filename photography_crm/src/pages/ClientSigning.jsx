@@ -8,6 +8,7 @@ import SignaturePad from '../components/SignaturePad'
 import Button from '../components/ui/Button'
 import Field from '../components/ui/Field'
 import { inputClass, cardClass } from '../components/ui/styles'
+import { NEWSLETTER_CONSENT_TEXT, NEWSLETTER_DEFAULT_CHECKED } from '../utils/newsletter'
 
 const AGREEMENT_FIELDS = [
   'clientName', 'photoshootTypeName', 'packageName', 'shootDate', 'price',
@@ -22,6 +23,7 @@ export default function ClientSigning() {
   const [emailError, setEmailError] = useState('')
   const [signature, setSignature] = useState(null)
   const [signatureError, setSignatureError] = useState('')
+  const [newsletter, setNewsletter] = useState(NEWSLETTER_DEFAULT_CHECKED)
   const [submitError, setSubmitError] = useState('')
   const agreementRef = useRef(null)
   const [submitting, setSubmitting] = useState(false)
@@ -62,12 +64,22 @@ export default function ClientSigning() {
         email,
         signature,
         signedAt: serverTimestamp(),
+        newsletterConsent: newsletter,
+        newsletterConsentText: NEWSLETTER_CONSENT_TEXT,
       })
       batch.update(doc(db, 'clients', link.clientId), {
         email,
         agreementSigned: true,
         agreementSignedAt: serverTimestamp(),
         status: 'agreement_signed',
+        // Only an opt-in is recorded here; unticking never unsubscribes an existing subscriber
+        ...(newsletter && {
+          newsletterConsent: true,
+          newsletterConsentAt: serverTimestamp(),
+          newsletterConsentSource: 'agreement',
+          newsletterUnsubscribedAt: null,
+          newsletterUnsubscribeSource: null,
+        }),
       })
       await batch.commit()
       setSuccess(true)
@@ -114,6 +126,11 @@ export default function ClientSigning() {
               <SignaturePad hasError={!!signatureError}
                 onChange={(data) => { setSignature(data); setSignatureError('') }} />
             </Field>
+            <label className="flex items-start gap-2.5 text-sm text-gray-700 cursor-pointer">
+              <input type="checkbox" className="w-4 h-4 mt-0.5 shrink-0 accent-gray-900"
+                checked={newsletter} onChange={(e) => setNewsletter(e.target.checked)} />
+              <span>{NEWSLETTER_CONSENT_TEXT}</span>
+            </label>
             {submitError && <p className="text-red-600 text-sm">{submitError}</p>}
             <Button type="submit" size="lg" fullWidth disabled={submitting}>
               {submitting ? 'שולח...' : 'אני מאשר/ת את ההסכם'}
