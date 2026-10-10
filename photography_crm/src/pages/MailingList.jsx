@@ -20,7 +20,7 @@ import { formatDate, toInputDate } from '../utils/dateUtils'
 import {
   NEWSLETTER_STATUS, CONSENT_SOURCE_LABELS, UNSUBSCRIBE_SOURCE_LABELS, AD_SUBJECT_PREFIX, GMAIL_DAILY_LIMIT,
   getNewsletterStatus, filterMailingList, canReceive, normalizeEmail, buildMailingCsv,
-  gmailComposeUrl, unsubscribeUrl, emailFooter,
+  gmailComposeUrl, unsubscribeUrl, copyEmailFooter, SENDER_FOOTER, UNSUBSCRIBE_LINK_TEXT,
 } from '../utils/newsletter'
 
 const NEWSLETTER_FILTERS = [
@@ -58,6 +58,36 @@ function loadFilters() {
   } catch {
     return {}
   }
+}
+
+function FooterPreview() {
+  return (
+    <div className="text-xs text-gray-600 leading-relaxed border-s-2 border-gray-200 ps-3">
+      {SENDER_FOOTER.split('\n').map((line) => <div key={line}>{line}</div>)}
+      <a href={unsubscribeUrl()} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline underline-offset-2">
+        {UNSUBSCRIBE_LINK_TEXT}
+      </a>
+    </div>
+  )
+}
+
+function CopyFooterButton({ label = 'העתק חתימה' }) {
+  const [state, setState] = useState(null)
+  async function copy() {
+    try {
+      await copyEmailFooter(unsubscribeUrl())
+      setState('copied')
+    } catch {
+      setState('failed')
+    }
+    setTimeout(() => setState(null), 2000)
+  }
+  return (
+    <Button variant="secondary" size="sm" onClick={copy}>
+      {state === 'copied' ? <><Check className="w-4 h-4 text-green-600" /> הועתק!</>
+        : state === 'failed' ? 'ההעתקה נכשלה' : <><Copy className="w-4 h-4" /> {label}</>}
+    </Button>
+  )
 }
 
 function downloadFile(content, filename, type) {
@@ -153,10 +183,16 @@ export default function MailingList() {
     return parts.join(' · ') || 'כל המנויים'
   }
 
-  function openGmail() {
-    const url = gmailComposeUrl(recipientEmails, { subject: AD_SUBJECT_PREFIX, body: emailFooter(unsubscribeUrl()) })
-    window.open(url, '_blank', 'noopener')
-    setLogForm({ method: 'gmail', subject: '' })
+  // The footer is copied first (while this tab still has focus); the compose window opens right after
+  async function openGmail() {
+    let footerCopied = true
+    try {
+      await copyEmailFooter(unsubscribeUrl())
+    } catch {
+      footerCopied = false
+    }
+    window.open(gmailComposeUrl(recipientEmails, { subject: AD_SUBJECT_PREFIX }), '_blank', 'noopener')
+    setLogForm({ method: 'gmail', subject: '', footerCopied })
   }
 
   function exportCsv() {
@@ -269,15 +305,28 @@ export default function MailingList() {
           </summary>
           <div className="mt-3 space-y-3">
             <p className="text-xs text-gray-500 leading-relaxed">
-              ג׳ימייל ייפתח עם הנמענים בעותק מוסתר (BCC), שורת נושא שמתחילה ב״{AD_SUBJECT_PREFIX.trim()}״ (חובה לפי חוק הספאם)
-              וחתימה עם קישור ההסרה. הקובץ מתאים לייבוא ל-Mailchimp, MailerLite ו-Brevo.
+              ג׳ימייל ייפתח עם הנמענים בעותק מוסתר (BCC) ושורת נושא שמתחילה ב״{AD_SUBJECT_PREFIX.trim()}״ (חובה לפי חוק הספאם).
+              החתימה עם קישור ההסרה מועתקת אוטומטית — יש להדביק אותה (Ctrl+V) בסוף המייל.
+              הקובץ מתאים לייבוא ל-Mailchimp, MailerLite ו-Brevo.
             </p>
+            <div className="flex flex-wrap items-end gap-3">
+              <FooterPreview />
+              <CopyFooterButton />
+            </div>
             <CopyLink url={unsubscribeUrl()} />
           </div>
         </details>
 
         {logForm && (
           <div className="mt-4 pt-4 border-t border-gray-50">
+            {logForm.method === 'gmail' && (
+              <div className={`flex flex-wrap items-center gap-2 text-sm rounded-lg px-3 py-2 mb-3 ${logForm.footerCopied ? 'bg-green-50 text-green-800' : 'bg-amber-50 text-amber-900'}`}>
+                {logForm.footerCopied
+                  ? <span><Check className="inline w-4 h-4 me-1" />החתימה עם קישור ההסרה הועתקה — בג׳ימייל לחצי Ctrl+V בסוף המייל כדי להדביק אותה</span>
+                  : <span><AlertTriangle className="inline w-4 h-4 me-1" />לא הצלחנו להעתיק את החתימה — לחצי על ״העתק חתימה שוב״ והדביקי אותה בסוף המייל</span>}
+                <CopyFooterButton label="העתק חתימה שוב" />
+              </div>
+            )}
             <p className="text-sm font-medium text-gray-800 mb-2">
               {logForm.method === 'gmail' ? 'שלחת את המייל? ' : 'ייצאת את הרשימה? '}
               מומלץ לתעד את השליחה ({recipientEmails.length} נמענים)

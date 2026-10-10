@@ -13,7 +13,8 @@ export const NEWSLETTER_DEFAULT_CHECKED = true
 // Required by Israeli anti-spam law at the start of the subject line
 export const AD_SUBJECT_PREFIX = 'פרסומת: '
 
-export const SENDER_FOOTER = 'רויטל פרצלינה | צילום\n054-8788851 | rparzelina@gmail.com'
+export const SENDER_FOOTER = 'רויטל פרצלינה | צלמת\n054-8788851 | rparzelina@gmail.com'
+export const UNSUBSCRIBE_LINK_TEXT = 'להסרה מרשימת התפוצה'
 
 export const CONSENT_SOURCE_LABELS = {
   owner: 'סומן ידנית',
@@ -147,8 +148,31 @@ export function unsubscribeUrl(origin = window.location.origin, base = import.me
   return `${origin}${base}#/unsubscribe`
 }
 
+// Plain-text footer: fallback where a link can't be hidden behind text
 export function emailFooter(link) {
-  return `\n\n\n—\n${SENDER_FOOTER}\nלהסרה מרשימת התפוצה: ${link}`
+  return `${SENDER_FOOTER}\n${UNSUBSCRIBE_LINK_TEXT}: ${link}`
+}
+
+const escapeHtml = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+
+// Rich footer: the unsubscribe link is hidden behind its text
+export function emailFooterHtml(link) {
+  const lines = SENDER_FOOTER.split('\n').map(escapeHtml)
+  lines.push(`<a href="${escapeHtml(link)}">${UNSUBSCRIBE_LINK_TEXT}</a>`)
+  return `<div dir="rtl">${lines.join('<br>')}</div>`
+}
+
+// A Gmail compose link can only prefill plain text, so the footer goes to the clipboard as rich text
+// (pasting it into Gmail keeps the hidden link). Falls back to plain text where rich copy isn't supported.
+export async function copyEmailFooter(link) {
+  if (typeof ClipboardItem !== 'undefined' && navigator.clipboard?.write) {
+    await navigator.clipboard.write([new ClipboardItem({
+      'text/html': new Blob([emailFooterHtml(link)], { type: 'text/html' }),
+      'text/plain': new Blob([emailFooter(link)], { type: 'text/plain' }),
+    })])
+  } else {
+    await navigator.clipboard.writeText(emailFooter(link))
+  }
 }
 
 export function gmailComposeUrl(emails, { subject = AD_SUBJECT_PREFIX, body = '' } = {}) {

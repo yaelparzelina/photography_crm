@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   getNewsletterStatus, consentChange, filterMailingList, canReceive, buildMailingCsv, canResetToNone,
-  gmailComposeUrl, emailFooter, unsubscribeUrl, NEWSLETTER_CONSENT_TEXT,
+  gmailComposeUrl, emailFooter, emailFooterHtml, unsubscribeUrl, NEWSLETTER_CONSENT_TEXT,
 } from '../newsletter'
 
 const ts = (iso) => ({ toDate: () => new Date(iso) })
@@ -82,8 +82,12 @@ describe('gmail', () => {
   it('footer includes sender details and the unsubscribe link', () => {
     const link = unsubscribeUrl('https://site.test', '/app/')
     expect(link).toBe('https://site.test/app/#/unsubscribe')
-    expect(emailFooter(link)).toContain('054-8788851')
-    expect(emailFooter(link)).toContain('להסרה מרשימת התפוצה: https://site.test/app/#/unsubscribe')
+    expect(emailFooter(link)).toBe('רויטל פרצלינה | צלמת\n054-8788851 | rparzelina@gmail.com\nלהסרה מרשימת התפוצה: https://site.test/app/#/unsubscribe')
+  })
+  it('rich footer hides the unsubscribe link behind its text', () => {
+    const html = emailFooterHtml('https://site.test/app/#/unsubscribe')
+    expect(html).toBe('<div dir="rtl">רויטל פרצלינה | צלמת<br>054-8788851 | rparzelina@gmail.com<br>'
+      + '<a href="https://site.test/app/#/unsubscribe">להסרה מרשימת התפוצה</a></div>')
   })
   it('consent text is the agreed wording', () => {
     expect(NEWSLETTER_CONSENT_TEXT).toBe('אשמח לקבל ניוזלטר, טיפים והטבות בלעדיות ללקוחות – מבטיחה לא להציף והסרה בקליק בכל עת.')

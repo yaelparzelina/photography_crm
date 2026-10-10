@@ -47,7 +47,10 @@ describe('MailingList', () => {
     mockSends.value = []
     mockUseClients.mockReturnValue({ clients, loading: false })
     openSpy = vi.spyOn(window, 'open').mockImplementation(() => null)
-    Object.defineProperty(navigator, 'clipboard', { value: { writeText: vi.fn(() => Promise.resolve()) }, configurable: true })
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText: vi.fn(() => Promise.resolve()), write: vi.fn(() => Promise.resolve()) }, configurable: true,
+    })
+    globalThis.ClipboardItem = class { constructor(data) { this.data = data } }
   })
 
   it('shows subscribers by default with name, email, type and consent details', () => {
@@ -89,21 +92,35 @@ describe('MailingList', () => {
     expect(screen.queryByText('דנה לוי')).not.toBeInTheDocument()
   })
 
-  it('opens Gmail with the selected recipients in BCC, ad subject and unsubscribe footer', () => {
+  it('opens Gmail with the selected recipients in BCC and ad subject, and copies the footer with a hidden unsubscribe link', async () => {
     renderPage()
     fireEvent.click(screen.getByLabelText('בחר את רון כהן'))
     fireEvent.click(screen.getByText(/שלח במייל/))
+    await waitFor(() => expect(openSpy).toHaveBeenCalled())
     const url = openSpy.mock.calls[0][0]
     const bcc = decodeURIComponent(url.split('bcc=')[1].split('&')[0])
     expect(bcc).toBe('dana@example.com,shira@example.com')
     expect(decodeURIComponent(url.split('su=')[1].split('&')[0])).toBe('פרסומת: ')
-    expect(decodeURIComponent(url.split('body=')[1])).toContain('#/unsubscribe')
+    expect(decodeURIComponent(url.split('body=')[1])).toBe('')
+    const [item] = navigator.clipboard.write.mock.calls[0][0]
+    const html = await item.data['text/html'].text()
+    expect(html).toContain('>להסרה מרשימת התפוצה</a>')
+    expect(html).toMatch(/href="[^"]*#\/unsubscribe"/)
+    expect(screen.getByText(/החתימה עם קישור ההסרה הועתקה/)).toBeInTheDocument()
+  })
+
+  it('tells the owner when the footer could not be copied', async () => {
+    navigator.clipboard.write.mockImplementationOnce(() => Promise.reject(new Error('denied')))
+    renderPage()
+    fireEvent.click(screen.getByText(/שלח במייל/))
+    expect(await screen.findByText(/לא הצלחנו להעתיק את החתימה/)).toBeInTheDocument()
+    expect(openSpy).toHaveBeenCalled()
   })
 
   it('logs a send after opening Gmail', async () => {
     renderPage()
     fireEvent.click(screen.getByText(/שלח במייל/))
-    fireEvent.change(screen.getByPlaceholderText(/מבצע צילומי משפחה/), { target: { value: 'מבצע חגים' } })
+    fireEvent.change(await screen.findByPlaceholderText(/מבצע צילומי משפחה/), { target: { value: 'מבצע חגים' } })
     fireEvent.click(screen.getByText('תעד שליחה'))
     await waitFor(() => expect(mockLogSend).toHaveBeenCalledWith(expect.objectContaining({
       subject: 'מבצע חגים', method: 'gmail', recipientCount: 3,
