@@ -187,10 +187,10 @@ describe('AgreementEditorModal', () => {
     })
   })
 
-  it('business days come from the client card and are synced back; empty uses 10', async () => {
+  it('business days come from the client card and are synced back; empty uses 15', async () => {
     const onLinkCreated = vi.fn()
     renderModal({ client: { ...defaultClient, businessDays: 12 }, onLinkCreated })
-    const input = screen.getByPlaceholderText('10')
+    const input = screen.getByPlaceholderText('15')
     expect(input).toHaveValue(12)
     fireEvent.change(input, { target: { value: '20' } })
     fireEvent.click(screen.getByText('צור קישור'))
@@ -200,12 +200,12 @@ describe('AgreementEditorModal', () => {
     })
   })
 
-  it('business days default to 10 when left empty', async () => {
+  it('business days default to 15 when left empty', async () => {
     renderModal()
     fireEvent.click(screen.getByText('צור קישור'))
     await waitFor(() => {
       expect(mockCreateAgreementLink).toHaveBeenCalledWith('client-1',
-        expect.objectContaining({ businessDays: 10 }), expect.objectContaining({ businessDays: 10 }))
+        expect.objectContaining({ businessDays: 15 }), expect.objectContaining({ businessDays: 15 }))
     })
   })
 

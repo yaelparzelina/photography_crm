@@ -1,5 +1,5 @@
 // Business days, counted from the shoot date, for delivering the edited photos
-export const DEFAULT_BUSINESS_DAYS = 10
+export const DEFAULT_BUSINESS_DAYS = 15
 
 // Empty or invalid values fall back to the default (same behavior as the album defaults)
 export function normalizeBusinessDays(value) {

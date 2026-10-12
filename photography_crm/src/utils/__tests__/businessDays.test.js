@@ -47,9 +47,10 @@ describe('deliveryDeadline', () => {
     expect(key(deliveryDeadline(day('2025-09-22'), 3))).toBe('2025-09-29')
   })
 
-  it('uses the default of 10 business days and accepts Firestore timestamps', () => {
+  it('uses the default of 15 business days and accepts Firestore timestamps', () => {
+    // Sunday 01/03 + 15 business days: three Sun–Thu weeks (2–5, 8–12, 15–19) and Sunday 22/03
     const ts = { toDate: () => new Date('2026-03-01T00:00:00Z') }
-    expect(key(deliveryDeadline(ts, ''))).toBe('2026-03-15')
+    expect(key(deliveryDeadline(ts, ''))).toBe('2026-03-22')
     expect(deliveryDeadline(null, 10)).toBeNull()
   })
 })

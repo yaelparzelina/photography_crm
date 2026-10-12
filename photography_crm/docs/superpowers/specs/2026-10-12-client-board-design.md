@@ -56,7 +56,7 @@ The current list moves to "מאגר לקוחות" (`/dashboard/clients`).
 - Board date chips use the same calendar (`DatePopover`).
 
 ## Business days
-- Deadline = shoot date + N business days (the client's `businessDays`, default 10).
+- Deadline = shoot date + N business days (the client's `businessDays`, default 15 — 10 until 2026-10-12).
 - Day 1 is the first business day after the shoot.
 - Fridays, Saturdays and holiday days don't count: ראש השנה (2 days), יום כיפור, סוכות, שמחת תורה, פסח first and seventh day, שבועות, and יום העצמאות (with its moving rules).
 - Holidays are computed with `Intl` and the Hebrew calendar, so no table needs to be maintained.

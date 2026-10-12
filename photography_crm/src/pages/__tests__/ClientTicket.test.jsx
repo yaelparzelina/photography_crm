@@ -287,16 +287,16 @@ describe('ClientTicket', () => {
     })
   })
 
-  it('business days field defaults to 10 and is saved as a number; publicity approval toggle is saved', async () => {
+  it('business days field defaults to 15 and is saved as a number; publicity approval toggle is saved', async () => {
     setupOnSnapshot(makeSnapshot())
     renderTicket()
     expect(screen.getByText('ימי עסקים למסירת התמונות')).toBeInTheDocument()
-    expect(screen.getByPlaceholderText('10')).toHaveValue(null)
+    expect(screen.getByPlaceholderText('15')).toHaveValue(null)
     fireEvent.click(screen.getByRole('switch', { name: 'אישור פרסום תמונות' }))
     fireEvent.click(screen.getByText('שמור שינויים'))
     await waitFor(() => {
       expect(mockUpdateDoc).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
-        businessDays: 10, publicityApproved: true,
+        businessDays: 15, publicityApproved: true,
       }))
     })
   })
@@ -353,10 +353,10 @@ describe('ClientTicket', () => {
   it('custom business days are saved', async () => {
     setupOnSnapshot(makeSnapshot())
     renderTicket()
-    fireEvent.change(screen.getByPlaceholderText('10'), { target: { value: '15' } })
+    fireEvent.change(screen.getByPlaceholderText('15'), { target: { value: '12' } })
     fireEvent.click(screen.getByText('שמור שינויים'))
     await waitFor(() => {
-      expect(mockUpdateDoc).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ businessDays: 15 }))
+      expect(mockUpdateDoc).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ businessDays: 12 }))
     })
   })
 

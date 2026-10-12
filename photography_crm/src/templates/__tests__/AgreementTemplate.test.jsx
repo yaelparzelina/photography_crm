@@ -59,11 +59,11 @@ describe('AgreementTemplate', () => {
     expect(screen.queryByText(/האלבום יימסר עם שליח לבית הלקוח/)).not.toBeInTheDocument()
   })
 
-  it('photo delivery uses the business days from the agreement, default 10', () => {
+  it('photo delivery uses the business days from the agreement, default 15', () => {
     const { rerender } = render(<AgreementTemplate link={{ ...sampleLink, businessDays: 14 }} />)
     expect(screen.getByText(/עד 14 ימי עסקים מיום הצילומים/)).toBeInTheDocument()
     rerender(<AgreementTemplate link={{ ...sampleLink, businessDays: undefined }} />)
-    expect(screen.getByText(/עד 10 ימי עסקים מיום הצילומים/)).toBeInTheDocument()
+    expect(screen.getByText(/עד 15 ימי עסקים מיום הצילומים/)).toBeInTheDocument()
   })
 
   it('shows album line when includesAlbum=true even without size and pages', () => {
