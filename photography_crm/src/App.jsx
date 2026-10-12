@@ -10,6 +10,9 @@ import MailingList from './pages/MailingList'
 import Unsubscribe from './pages/Unsubscribe'
 import ClientProposal from './pages/ClientProposal'
 import ClientSigning from './pages/ClientSigning'
+import DressGuides from './pages/DressGuides'
+import DressGuideEditor from './pages/DressGuideEditor'
+import DressGuidePage from './pages/DressGuidePage'
 
 export default function App() {
   return (
@@ -18,12 +21,15 @@ export default function App() {
       <Route path="/client/:linkId" element={<ClientProposal />} />
       <Route path="/sign/:linkId" element={<ClientSigning />} />
       <Route path="/unsubscribe" element={<Unsubscribe />} />
+      <Route path="/dress/:slug" element={<DressGuidePage />} />
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard/*" element={<DashboardLayout />}>
           <Route index element={<Dashboard />} />
           <Route path="clients/:id" element={<ClientTicket />} />
           <Route path="messages" element={<Messages />} />
           <Route path="mailing-list" element={<MailingList />} />
+          <Route path="dress-guides" element={<DressGuides />} />
+          <Route path="dress-guides/:slug" element={<DressGuideEditor />} />
           <Route path="settings" element={<Settings />} />
         </Route>
       </Route>

@@ -1,9 +1,10 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import { signOut } from 'firebase/auth'
 import { auth } from '../../firebase'
-import { Camera, Users, Settings, LogOut, MessageCircle, Mail } from 'lucide-react'
+import { Camera, Users, Settings, LogOut, MessageCircle, Mail, Shirt } from 'lucide-react'
 import { useClients } from '../../hooks/useClients'
 import { useUnsubscribeSync } from '../../hooks/useNewsletter'
+import { useDressGuidesSeed } from '../../hooks/useDressGuides'
 
 const navLinkClass = ({ isActive }) =>
   `flex items-center gap-1.5 text-sm transition-colors ${
@@ -15,6 +16,8 @@ export default function DashboardLayout() {
   const { clients, loading: clientsLoading } = useClients()
   // Applies requests from the public unsubscribe page to the matching client records
   useUnsubscribeSync(clients, clientsLoading)
+  // Adds the starter dress guides (and their messages) on first use
+  useDressGuidesSeed()
 
   async function handleLogout() {
     try {
@@ -42,6 +45,9 @@ export default function DashboardLayout() {
           </NavLink>
           <NavLink to="/dashboard/mailing-list" className={navLinkClass}>
             <Mail className="w-4 h-4" /> רשימת תפוצה
+          </NavLink>
+          <NavLink to="/dashboard/dress-guides" className={navLinkClass}>
+            <Shirt className="w-4 h-4" /> הנחיות לבוש
           </NavLink>
           <NavLink to="/dashboard/settings" className={navLinkClass}>
             <Settings className="w-4 h-4" /> הגדרות

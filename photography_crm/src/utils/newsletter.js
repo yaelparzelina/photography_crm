@@ -1,5 +1,6 @@
 import { getClientName } from './clientUtils'
 import { toInputDate } from './dateUtils'
+import { appOrigin, publicUrl } from './publicUrl'
 
 // --- Consent wording & defaults ---
 
@@ -144,8 +145,8 @@ export function buildMailingCsv(clients, typeMap) {
 
 // --- Gmail ---
 
-export function unsubscribeUrl(origin = window.location.origin, base = import.meta.env.BASE_URL) {
-  return `${origin}${base}#/unsubscribe`
+export function unsubscribeUrl(origin = appOrigin(), base = import.meta.env.BASE_URL) {
+  return publicUrl('/unsubscribe', origin, base)
 }
 
 // Plain-text footer: fallback where a link can't be hidden behind text

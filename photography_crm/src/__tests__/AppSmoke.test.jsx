@@ -44,7 +44,7 @@ vi.mock('firebase/firestore', () => ({
     return () => {}
   },
   getDoc: vi.fn(() => Promise.resolve({ exists: () => true })), getDocs: vi.fn(), addDoc: vi.fn(), setDoc: vi.fn(), updateDoc: vi.fn(() => Promise.resolve()),
-  deleteDoc: vi.fn(), serverTimestamp: vi.fn(), writeBatch: vi.fn(),
+  deleteDoc: vi.fn(), serverTimestamp: vi.fn(), writeBatch: vi.fn(), runTransaction: vi.fn(() => Promise.resolve(false)),
 }))
 
 vi.mock('react-firebase-hooks/firestore', () => ({
@@ -133,6 +133,20 @@ describe('App smoke (logged in)', () => {
     expect(screen.getByText('הסרה מרשימת התפוצה')).toBeInTheDocument()
     delete data.clients[1].newsletterConsent
     delete data.clients[1].email
+  })
+
+  it('dress guides section, editor and public page render', async () => {
+    data.dressGuides = [{ id: 'family', name: 'צילומי משפחה', title: 'הנחיות לבוש לצילומי משפחה', order: 0, photoIds: [] }]
+    const { unmount } = renderAt('/dashboard/dress-guides')
+    expect(screen.getByRole('heading', { name: 'הנחיות לבוש' })).toBeInTheDocument()
+    expect(screen.getByText('צילומי משפחה')).toBeInTheDocument()
+    unmount()
+    const editor = renderAt('/dashboard/dress-guides/new')
+    expect(screen.getByRole('heading', { name: 'דף הנחיות חדש' })).toBeInTheDocument()
+    editor.unmount()
+    renderAt('/dress/missing')
+    expect(await screen.findByText('הדף לא נמצא')).toBeInTheDocument()
+    delete data.dressGuides
   })
 
   it('opening a client from the mailing list and pressing back returns there, with filters kept', () => {

@@ -20,6 +20,14 @@ service cloud.firestore {
       allow read: if request.auth == null;
     }
 
+    // Public: dress guide pages and their photos, read one document by exact ID (no listing)
+    match /dressGuides/{guideId} {
+      allow get: if request.auth == null;
+    }
+    match /dressGuidePhotos/{photoId} {
+      allow get: if request.auth == null;
+    }
+
     // Public: update only signing fields on a client document
     match /clients/{clientId} {
       allow update: if request.auth == null
