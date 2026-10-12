@@ -161,29 +161,76 @@ export function DatePopover({ anchorRef, value, onChange, onClose, clearable = t
   )
 }
 
-// Date field: type dd/mm/yyyy or pick from the calendar. Calls onChange with a Date (UTC midnight) or null.
+// Typing template: the owner types digits only, the slashes are already there
+const MASK = '__/__/____'
+const SLOTS = [0, 1, 3, 4, 6, 7, 8, 9] // where the 8 digits of ddmmyyyy go in the template
+
+function fillMask(digits) {
+  const chars = MASK.split('')
+  digits.split('').forEach((d, i) => { chars[SLOTS[i]] = d })
+  return chars.join('')
+}
+const digitsOf = (value) => formatDay(value).replace(/\D/g, '')
+const dateFromDigits = (digits, century = false) => (century
+  ? dayFromParts(2000 + Number(digits.slice(4, 6)), Number(digits.slice(2, 4)) - 1, Number(digits.slice(0, 2)))
+  : dayFromParts(Number(digits.slice(4, 8)), Number(digits.slice(2, 4)) - 1, Number(digits.slice(0, 2))))
+
+// Date field: type the digits into __/__/____ or pick from the calendar. Calls onChange with a Date (UTC midnight) or null.
 export default function DateInput({ value, onChange, hasError = false, placeholder = 'dd/mm/yyyy', clearable = true, className = '', ...rest }) {
   const [open, setOpen] = useState(false)
-  const [text, setText] = useState(formatDay(value))
+  const [digits, setDigits] = useState('')
   const [editing, setEditing] = useState(false)
   const wrapRef = useRef(null)
-  const shown = editing ? text : formatDay(value)
+  const inputRef = useRef(null)
+  const invalid = editing && digits.length === 8 && !dateFromDigits(digits)
+  const shown = editing ? fillMask(digits) : formatDay(value)
 
-  function handleText(e) {
-    const next = e.target.value
-    setText(next)
-    if (!next.trim()) { if (clearable) onChange(null); return }
-    const parsed = parseDateText(next)
-    if (parsed) onChange(parsed)
+  // Keep the caret right after the last typed digit
+  useLayoutEffect(() => {
+    const input = inputRef.current
+    if (!editing || document.activeElement !== input) return
+    const place = () => {
+      const pos = digits.length ? SLOTS[digits.length - 1] + 1 : 0
+      input.setSelectionRange(pos, pos)
+    }
+    place()
+    const frame = requestAnimationFrame(place) // after a mouse click has placed its own caret
+    return () => cancelAnimationFrame(frame)
+  }, [digits, editing])
+
+  function handleChange(e) {
+    const raw = e.target.value
+    // A full date pasted or filled in another format (16.10.2026, 2026-10-16)
+    if (!raw.includes('_')) {
+      const parsed = parseDateText(raw)
+      if (parsed) { setDigits(digitsOf(parsed)); onChange(parsed); return }
+    }
+    const next = raw.replace(/\D/g, '').slice(0, 8)
+    setDigits(next)
+    if (!next) { if (clearable) onChange(null); return }
+    if (next.length === 8) {
+      const date = dateFromDigits(next)
+      if (date) onChange(date)
+    }
+  }
+
+  function handleBlur() {
+    setEditing(false)
+    // A two-digit year (16/10/26) is completed when leaving the field
+    if (digits.length === 6) {
+      const date = dateFromDigits(digits, true)
+      if (date) onChange(date)
+    }
   }
 
   return (
     <div ref={wrapRef} className={`relative ${className}`}>
-      <input type="text" inputMode="numeric" dir="ltr" autoComplete="off" placeholder={placeholder}
-        className={`${inputClass(hasError)} text-right !pl-10`} value={shown}
-        onFocus={() => { setEditing(true); setText(formatDay(value)) }}
-        onBlur={() => setEditing(false)}
-        onChange={handleText}
+      <input ref={inputRef} type="text" inputMode="numeric" dir="ltr" autoComplete="off" placeholder={placeholder}
+        className={`${inputClass(hasError || invalid)} text-right !pl-10 tabular-nums tracking-wide`} value={shown}
+        title={invalid ? 'תאריך לא תקין' : undefined} aria-invalid={invalid || undefined}
+        onFocus={() => { setEditing(true); setDigits(digitsOf(value)) }}
+        onBlur={handleBlur}
+        onChange={handleChange}
         onKeyDown={(e) => { if (e.key === 'ArrowDown' && e.altKey) setOpen(true) }}
         {...rest} />
       <button type="button" aria-label="פתיחת לוח שנה" aria-haspopup="dialog" aria-expanded={open}
@@ -191,6 +238,7 @@ export default function DateInput({ value, onChange, hasError = false, placehold
         className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-gray-400 hover:text-gray-700 hover:bg-gray-100">
         <CalendarDays className="w-4 h-4" />
       </button>
+      {invalid && <p className="text-red-600 text-xs mt-1">תאריך לא תקין</p>}
       {open && (
         <DatePopover anchorRef={wrapRef} value={value} clearable={clearable}
           onChange={(d) => { setEditing(false); onChange(d) }} onClose={() => setOpen(false)} />

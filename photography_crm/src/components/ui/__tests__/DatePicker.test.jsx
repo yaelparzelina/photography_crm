@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, act } from '@testing-library/react'
 import { useState } from 'react'
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest'
 import DateInput from '../DatePicker'
@@ -39,6 +39,43 @@ describe('DateInput', () => {
     expect(onChange).toHaveBeenLastCalledWith(new Date('2026-10-20T00:00:00Z'))
     fireEvent.change(input, { target: { value: '' } })
     expect(onChange).toHaveBeenLastCalledWith(null)
+  })
+
+  it('typing shows a __/__/____ template and fills in the digits', () => {
+    const onChange = vi.fn()
+    render(<Controlled onChange={onChange} />)
+    const input = screen.getByLabelText('תאריך')
+    expect(input).toHaveAttribute('placeholder', 'dd/mm/yyyy')
+    act(() => input.focus())
+    expect(input).toHaveValue('__/__/____')
+    // each keystroke inserts a digit into the template; the slashes stay in place
+    fireEvent.change(input, { target: { value: '1__/__/____' } })
+    expect(input).toHaveValue('1_/__/____')
+    fireEvent.change(input, { target: { value: '16_/__/____' } })
+    fireEvent.change(input, { target: { value: '161/__/____' } })
+    expect(input).toHaveValue('16/1_/____')
+    expect(input.selectionStart).toBe(4) // caret right after the last digit
+    fireEvent.change(input, { target: { value: '16/10/2026_' } })
+    expect(input).toHaveValue('16/10/2026')
+    expect(onChange).toHaveBeenLastCalledWith(new Date('2026-10-16T00:00:00Z'))
+    // backspace removes the last digit
+    fireEvent.change(input, { target: { value: '16/10/202_' } })
+    expect(input).toHaveValue('16/10/202_')
+  })
+
+  it('flags an impossible date and completes a two-digit year on leaving the field', () => {
+    const onChange = vi.fn()
+    render(<Controlled onChange={onChange} />)
+    const input = screen.getByLabelText('תאריך')
+    fireEvent.focus(input)
+    fireEvent.change(input, { target: { value: '31022026' } })
+    expect(screen.getByText('תאריך לא תקין')).toBeInTheDocument()
+    expect(onChange).not.toHaveBeenCalled()
+    fireEvent.change(input, { target: { value: '161026' } })
+    expect(input).toHaveValue('16/10/26__')
+    fireEvent.blur(input)
+    expect(onChange).toHaveBeenLastCalledWith(new Date('2026-10-16T00:00:00Z'))
+    expect(input).toHaveValue('16/10/2026')
   })
 
   it('picks a day from the calendar, which opens on the current value', () => {

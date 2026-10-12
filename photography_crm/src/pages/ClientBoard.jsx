@@ -259,11 +259,11 @@ export default function ClientBoard() {
         accessibility={{
           screenReaderInstructions: { draggable: 'רווח להרמת הכרטיס, חיצים להזזה, רווח להנחה, Escape לביטול. Enter פותח את כרטיס הלקוח.' },
         }}>
-        {/* Columns share the width; below 15rem each, the board scrolls sideways */}
+        {/* Columns share the width; below 13rem each, the board scrolls sideways */}
         <div className="flex-1 min-h-0 overflow-x-auto overflow-y-hidden">
           <div className="flex gap-3 h-full">
             {BOARD_SLOTS.map((slot) => (
-              <div key={slot.join('-')} className="flex-1 min-w-[15rem] h-full flex flex-col gap-3">
+              <div key={slot.join('-')} className="flex-1 min-w-[13rem] h-full flex flex-col gap-3">
                 {slot.map((id) => renderColumn(id))}
               </div>
             ))}
