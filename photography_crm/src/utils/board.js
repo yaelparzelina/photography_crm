@@ -9,9 +9,9 @@ export const BOARD_COLUMNS = [
   { id: 'callback', title: 'לחזור ללקוח', statuses: ['proposal_sent'] },
   { id: 'closing', title: 'סגירת חוזה והנחיות לבוש', statuses: ['proposal_sent', 'agreement_sent', 'agreement_signed'] },
   { id: 'lost', title: 'לא סגר', statuses: ['didnt_book'], expires: true },
-  { id: 'preshoot', title: 'לפני צילום', statuses: ['shoot_scheduled'] },
-  { id: 'editing', title: 'עריכת תמונות', statuses: ['editing_in_progress'] },
-  { id: 'album', title: 'משלוח אלבום', statuses: ['editing_in_progress'] },
+  { id: 'preshoot', title: 'לפני צילום', statuses: ['shoot_scheduled'], sortedByDate: true },
+  { id: 'editing', title: 'עריכת תמונות', statuses: ['editing_in_progress'], sortedByDate: true },
+  { id: 'album', title: 'משלוח אלבום', statuses: ['editing_in_progress'], sortedByDate: true },
   { id: 'done', title: 'הסתיים', statuses: ['done'], expires: true },
 ]
 
@@ -54,14 +54,17 @@ export function dropStatus(columnId, client) {
   return COLUMN_BY_ID[columnId].statuses[0]
 }
 
-// Firestore changes for moving a client to a column
-export function moveChanges(columnId, client) {
-  return { status: dropStatus(columnId, client), boardColumn: columnId, boardMovedAt: serverTimestamp(), boardHidden: false }
+// Position of a new arrival: before everything already in the column (more negative = higher up)
+const topOrder = () => -Date.now()
+
+// Firestore changes for moving a client to a column (to the top, unless a position is given)
+export function moveChanges(columnId, client, order = topOrder()) {
+  return { status: dropStatus(columnId, client), boardColumn: columnId, boardMovedAt: serverTimestamp(), boardHidden: false, boardOrder: order }
 }
 
 // Firestore changes for a status change made outside the board (client card, clients list)
 export function statusChanges(status) {
-  return { status, boardColumn: null, boardMovedAt: serverTimestamp(), boardHidden: false }
+  return { status, boardColumn: null, boardMovedAt: serverTimestamp(), boardHidden: false, boardOrder: topOrder() }
 }
 
 const toDate = (v) => (v?.toDate ? v.toDate() : v instanceof Date ? v : v ? new Date(v) : null)
@@ -84,6 +87,20 @@ export function clientDeadline(client) {
 
 const time = (d) => (d ? d.getTime() : Infinity)
 
+// Manual order inside a column: the saved position, else most recently moved first
+export function orderKey(client) {
+  if (typeof client.boardOrder === 'number') return client.boardOrder
+  return -(movedAt(client) || toDate(client.createdAt) || new Date(0)).getTime()
+}
+
+// Position for a ticket placed at `index` among `list` (the column's tickets without it, in display order)
+export function orderAt(list, index) {
+  if (!list.length) return topOrder()
+  if (index <= 0) return orderKey(list[0]) - 1000
+  if (index >= list.length) return orderKey(list[list.length - 1]) + 1000
+  return (orderKey(list[index - 1]) + orderKey(list[index])) / 2
+}
+
 // Tickets of one column, in display order
 export function sortColumn(columnId, clients) {
   const list = [...clients]
@@ -93,8 +110,7 @@ export function sortColumn(columnId, clients) {
   if (columnId === 'editing' || columnId === 'album') {
     return list.sort((a, b) => time(clientDeadline(a)) - time(clientDeadline(b)))
   }
-  const recent = (c) => (movedAt(c) || toDate(c.createdAt) || new Date(0)).getTime()
-  return list.sort((a, b) => recent(b) - recent(a))
+  return list.sort((a, b) => orderKey(a) - orderKey(b))
 }
 
 // All clients currently on the board, grouped by column and sorted

@@ -13,7 +13,7 @@ import { normalizeAlbum } from '../utils/album'
 import { useLinks } from '../hooks/useLinks'
 import { usePackagesByType } from '../hooks/usePackages'
 import AgreementTemplate from '../templates/AgreementTemplate'
-import { toInputDate, fromInputDate } from '../utils/dateUtils'
+import DateInput from './ui/DatePicker'
 import { getClientName } from '../utils/clientUtils'
 
 function albumFromPackage(pkg) {
@@ -160,9 +160,8 @@ export default function AgreementEditorModal({ isOpen, onClose, client, types, o
             </div>
 
             <Field label="תאריך צילום *" error={errors.shootDate && 'נדרש תאריך צילום ליצירת ההסכם'}>
-              <input type="date" max="9999-12-31" className={inputClass(errors.shootDate)}
-                value={overrides.shootDate ? toInputDate(overrides.shootDate) : ''}
-                onChange={(e) => set('shootDate', fromInputDate(e.target.value))} />
+              <DateInput aria-label="תאריך צילום" hasError={!!errors.shootDate} value={overrides.shootDate}
+                onChange={(d) => set('shootDate', d)} />
             </Field>
 
             <Field label="מספר תמונות ערוכות">

@@ -17,6 +17,7 @@ export function useClients() {
       ...data,
       createdAt: serverTimestamp(),
       boardMovedAt: serverTimestamp(),
+      boardOrder: -Date.now(), // top of the first board column
     })
     return docRef.id
   }

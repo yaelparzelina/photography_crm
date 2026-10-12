@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { ChevronDown } from 'lucide-react'
 import Field from './Field'
-import { inputClass } from './styles'
-import { formatDate, toInputDate, fromInputDate } from '../../utils/dateUtils'
+import DateInput from './DatePicker'
+import { formatDate } from '../../utils/dateUtils'
 
 // Drop-down with a from/to date range. Empty = no date filter.
 export default function DateRangeFilter({ label, from, to, onChange, className = '' }) {
@@ -12,6 +12,8 @@ export default function DateRangeFilter({ label, from, to, onChange, className =
   useEffect(() => {
     if (!open) return
     function handleOutside(e) {
+      // Clicks in the calendar (a portal) belong to this filter too
+      if (e.target.closest?.('[data-date-popover]')) return
       if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false)
     }
     function handleKey(e) { if (e.key === 'Escape') setOpen(false) }
@@ -37,12 +39,10 @@ export default function DateRangeFilter({ label, from, to, onChange, className =
         <div role="dialog" aria-label={label}
           className="absolute top-full start-0 mt-1 z-30 w-72 max-w-[90vw] bg-white border border-gray-200 rounded-xl shadow-lg p-4 space-y-3">
           <Field label="מתאריך">
-            <input type="date" max="9999-12-31" className={inputClass()} value={toInputDate(from)}
-              onChange={(e) => onChange({ from: fromInputDate(e.target.value), to })} />
+            <DateInput aria-label="מתאריך" value={from} onChange={(d) => onChange({ from: d, to })} />
           </Field>
           <Field label="עד תאריך">
-            <input type="date" max="9999-12-31" className={inputClass()} value={toInputDate(to)}
-              onChange={(e) => onChange({ from, to: fromInputDate(e.target.value) })} />
+            <DateInput aria-label="עד תאריך" value={to} onChange={(d) => onChange({ from, to: d })} />
           </Field>
           <button type="button" onClick={() => onChange({ from: null, to: null })} disabled={!from && !to}
             className="text-sm text-gray-500 hover:text-gray-900 disabled:opacity-40">

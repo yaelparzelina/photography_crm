@@ -28,12 +28,13 @@ import Button from '../components/ui/Button'
 import Card from '../components/ui/Card'
 import Field from '../components/ui/Field'
 import CopyLink from '../components/ui/CopyLink'
+import DateInput from '../components/ui/DatePicker'
 import { inputClass, itemClass } from '../components/ui/styles'
 import { printElement } from '../utils/printDocument'
 import { STATUS_OPTIONS } from '../utils/statusConfig'
 import { statusChanges } from '../utils/board'
 import { getClientName, signedDocumentTitle } from '../utils/clientUtils'
-import { formatDate, toInputDate, fromInputDate } from '../utils/dateUtils'
+import { formatDate, fromInputDate } from '../utils/dateUtils'
 import { ArrowRight, Trash2, FileText, Eye, Download, MessageCircle } from 'lucide-react'
 
 
@@ -337,9 +338,7 @@ export default function ClientTicket() {
             </select>
           </div>
           <Field label="תאריך לחזרה ללקוח">
-            <input type="date" max="9999-12-31" className={inputClass()} aria-label="תאריך לחזרה ללקוח"
-              value={form.callbackDate ? toInputDate(form.callbackDate) : ''}
-              onChange={(e) => set('callbackDate', fromInputDate(e.target.value))} />
+            <DateInput aria-label="תאריך לחזרה ללקוח" value={form.callbackDate} onChange={(d) => set('callbackDate', d)} />
           </Field>
           <Field label="הודעה לפני צילום">
             <div className="flex items-center min-h-[42px]">
@@ -368,9 +367,7 @@ export default function ClientTicket() {
             <input type="email" className={inputClass(!!emailError)} value={form.email || ''} onChange={(e) => set('email', e.target.value)} />
           </Field>
           <Field label="תאריך לידה">
-            <input type="date" max="9999-12-31" className={inputClass()}
-              value={form.dateOfBirth ? toInputDate(form.dateOfBirth) : ''}
-              onChange={(e) => set('dateOfBirth', fromInputDate(e.target.value))} />
+            <DateInput aria-label="תאריך לידה" value={form.dateOfBirth} onChange={(d) => set('dateOfBirth', d)} />
           </Field>
           <Field label="פנייה בלשון">
             <div className="flex items-center min-h-[42px]">
@@ -416,14 +413,10 @@ export default function ClientTicket() {
             </DisabledHint>
           </Field>
           <Field label="תאריך צילום">
-            <input type="date" max="9999-12-31" className={inputClass()}
-              value={form.shootDate ? toInputDate(form.shootDate) : ''}
-              onChange={(e) => set('shootDate', fromInputDate(e.target.value))} />
+            <DateInput aria-label="תאריך צילום" value={form.shootDate} onChange={(d) => set('shootDate', d)} />
           </Field>
           <Field label="תאריך אירוע">
-            <input type="date" max="9999-12-31" className={inputClass()}
-              value={form.eventDate ? toInputDate(form.eventDate) : ''}
-              onChange={(e) => set('eventDate', fromInputDate(e.target.value))} />
+            <DateInput aria-label="תאריך אירוע" value={form.eventDate} onChange={(d) => set('eventDate', d)} />
           </Field>
           <BusinessDaysField value={form.businessDays} onChange={(v) => set('businessDays', v)} />
           <Field label="מחיר (₪)">

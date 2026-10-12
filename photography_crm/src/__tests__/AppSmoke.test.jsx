@@ -106,7 +106,7 @@ describe('App smoke (logged in)', () => {
   it('client page renders for a client with album details and event date', () => {
     renderAt('/dashboard/clients/c2')
     expect(screen.getByDisplayValue('40x40')).toBeInTheDocument()
-    expect(screen.getByDisplayValue('2024-05-01')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('01/05/2024')).toBeInTheDocument()
   })
 
   it('client page survives an invalid date in saved data and in an unsaved draft', () => {

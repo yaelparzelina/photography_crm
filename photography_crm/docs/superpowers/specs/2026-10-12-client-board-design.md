@@ -40,10 +40,20 @@ The current list moves to "מאגר לקוחות" (`/dashboard/clients`).
 - Column 3: "תאריך לחזרה" date picker on the ticket. The date is also editable on the card.
 - Column 4: "הנחיות לבוש" button. It opens "הודעות ללקוח" showing only the guide messages that match the shoot type, with the client filled in.
 - Column 6: "הודעה לפני צילום" button, which opens the pre-shoot message with the client filled in. A "נשלחה" toggle sets `preShootMessageSentAt` (✓ on the ticket).
-- Ordering is automatic:
-  - Column 6: nearest shoot first.
-  - Columns 7–8: nearest deadline first.
-  - Other columns: most recently moved first.
+- Ordering:
+  - Columns 6–8 are sorted automatically: column 6 by nearest shoot, columns 7–8 by nearest deadline.
+  - All other columns are ordered manually. Drag a ticket within its column, or use "הזזה למעלה/למטה" in the ⋯ menu.
+  - The position is saved as `boardOrder`; a lower number means higher up. A ticket arriving in a column goes to the top.
+  - Clients without a saved position fall back to most recently moved first.
+- Columns 4 and 6: a ticket without a shoot date shows a "+ תאריך צילום" chip that opens the calendar.
+- Hover hints explain the ₪, album and WhatsApp icons.
+- Contract chips have their own icons: ⏳ טרם נשלח חוזה, ✈ חוזה נשלח, ✓ חוזה נחתם.
+
+## Date picker (site-wide, added 2026-10-12)
+- Every date field uses `DateInput` (components/ui/DatePicker.jsx). You can type dd/mm/yyyy (also d/m/yy, dd.mm.yyyy or yyyy-mm-dd) or pick from a calendar.
+- The calendar is in Hebrew and runs Sunday to Saturday, right to left.
+- It has month and year pickers and marks holidays with a dot. Its footer has "היום" and "נקה תאריך".
+- Board date chips use the same calendar (`DatePopover`).
 
 ## Business days
 - Deadline = shoot date + N business days (the client's `businessDays`, default 10).

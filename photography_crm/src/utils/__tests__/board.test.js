@@ -3,7 +3,7 @@ import { vi, describe, it, expect } from 'vitest'
 vi.mock('firebase/firestore', () => ({ serverTimestamp: () => 'TS' }))
 
 import {
-  columnOf, dropStatus, moveChanges, statusChanges, isOnBoard, groupBoard, sortColumn, whatsappUrl, shortDate,
+  columnOf, dropStatus, moveChanges, statusChanges, isOnBoard, groupBoard, sortColumn, whatsappUrl, shortDate, orderKey, orderAt,
   BOARD_SLOTS, BOARD_COLUMNS,
 } from '../board'
 
@@ -38,8 +38,13 @@ describe('board columns', () => {
   })
 
   it('a move records the column and time; a status change elsewhere resets the column', () => {
-    expect(moveChanges('callback', {})).toEqual({ status: 'proposal_sent', boardColumn: 'callback', boardMovedAt: 'TS', boardHidden: false })
-    expect(statusChanges('done')).toEqual({ status: 'done', boardColumn: null, boardMovedAt: 'TS', boardHidden: false })
+    expect(moveChanges('callback', {})).toEqual({
+      status: 'proposal_sent', boardColumn: 'callback', boardMovedAt: 'TS', boardHidden: false, boardOrder: expect.any(Number),
+    })
+    expect(moveChanges('callback', {}, 5).boardOrder).toBe(5)
+    expect(statusChanges('done')).toEqual({ status: 'done', boardColumn: null, boardMovedAt: 'TS', boardHidden: false, boardOrder: expect.any(Number) })
+    // new arrivals go to the top
+    expect(moveChanges('new', {}).boardOrder).toBeLessThan(0)
   })
 })
 
@@ -80,6 +85,24 @@ describe('ordering', () => {
     expect(g.new.map((c) => c.id)).toEqual(['1'])
     expect(g.callback.map((c) => c.id)).toEqual(['2'])
     expect(g.done).toEqual([])
+  })
+})
+
+describe('manual order', () => {
+  it('saved positions win; clients without one fall back to most recently moved first', () => {
+    const list = [
+      { id: 'a', boardOrder: 10 }, { id: 'b', boardOrder: -5 }, { id: 'c', boardMovedAt: at('2026-02-01') },
+    ]
+    expect(sortColumn('callback', list).map((c) => c.id)).toEqual(['c', 'b', 'a'])
+    expect(orderKey({ boardMovedAt: at('2026-02-01') })).toBe(-new Date('2026-02-01').getTime())
+  })
+
+  it('orderAt places a ticket before, between or after its neighbours', () => {
+    const list = [{ boardOrder: 0 }, { boardOrder: 10 }]
+    expect(orderAt(list, 0)).toBeLessThan(0)
+    expect(orderAt(list, 1)).toBe(5)
+    expect(orderAt(list, 2)).toBeGreaterThan(10)
+    expect(orderAt([], 0)).toBeLessThan(0)
   })
 })
 

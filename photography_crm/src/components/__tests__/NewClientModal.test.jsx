@@ -105,16 +105,22 @@ describe('NewClientModal', () => {
     fireEvent.change(inputs[2], { target: { value: '050-1111111' } })
     const select = screen.getByDisplayValue('בחר סוג צילום')
     fireEvent.change(select, { target: { value: 'type1' } })
+    fireEvent.click(screen.getByRole('radio', { name: 'זכר' }))
+    fireEvent.change(screen.getByLabelText('תאריך אירוע'), { target: { value: '14/01/2027' } })
 
     fireEvent.click(screen.getByText('צור לקוח'))
 
     await waitFor(() => {
-      expect(mockCreateClient).toHaveBeenCalledWith({
+      expect(mockCreateClient).toHaveBeenCalledWith(expect.objectContaining({
         firstName: 'ישראל',
         lastName: 'ישראלי',
         phone: '050-1111111',
         photoshootTypeId: 'type1',
-      })
+        gender: 'male',
+        notes: '',
+      }))
+      expect(mockCreateClient.mock.calls[0][0].eventDate.toISOString()).toBe('2027-01-14T00:00:00.000Z')
+    
     })
   })
 

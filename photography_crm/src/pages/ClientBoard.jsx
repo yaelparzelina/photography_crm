@@ -2,7 +2,9 @@ import { useState, useMemo, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   DndContext, DragOverlay, PointerSensor, TouchSensor, KeyboardSensor, useSensor, useSensors, useDroppable,
+  pointerWithin, closestCenter, closestCorners,
 } from '@dnd-kit/core'
+import { SortableContext, verticalListSortingStrategy, sortableKeyboardCoordinates } from '@dnd-kit/sortable'
 import { Plus, Search, X, EyeOff } from 'lucide-react'
 import { useClients } from '../hooks/useClients'
 import { usePhotoshootTypes } from '../hooks/usePhotoshootTypes'
@@ -13,12 +15,27 @@ import BoardTicket, { TicketCard } from '../components/board/BoardTicket'
 import Button from '../components/ui/Button'
 import IconButton from '../components/ui/IconButton'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
-import { BOARD_SLOTS, COLUMN_BY_ID, EXPIRE_DAYS, groupBoard, columnOf, moveChanges } from '../utils/board'
+import { BOARD_SLOTS, COLUMN_BY_ID, EXPIRE_DAYS, groupBoard, columnOf, moveChanges, orderAt } from '../utils/board'
 import { PRE_SHOOT_KIND } from '../utils/messageTemplate'
 import { getClientName } from '../utils/clientUtils'
 
 const FROM_BOARD = { from: '/dashboard', fromLabel: 'לוח הלקוחות' }
-const BOARD_FIELDS = ['status', 'boardColumn', 'boardMovedAt', 'boardHidden']
+const BOARD_FIELDS = ['status', 'boardColumn', 'boardMovedAt', 'boardHidden', 'boardOrder']
+
+// Stacked slot: "סגירת חוזה" gets most of the height, "לא סגר" less
+const STACK_SIZES = { closing: 'flex-[7_1_0%]', lost: 'flex-[3_1_0%]' }
+
+// Date-sorted columns keep their order: tickets don't make room while dragging over them
+const keepOrder = () => null
+
+// Finds the column under the pointer, then the closest ticket in it (or the column itself when it's empty)
+function boardCollision(args) {
+  const column = pointerWithin(args).find((c) => COLUMN_BY_ID[c.id])
+  if (!column) return closestCorners(args) // keyboard
+  const tickets = args.droppableContainers.filter((d) => d.data.current?.columnId === column.id && d.id !== args.active.id)
+  if (!tickets.length || COLUMN_BY_ID[column.id].sortedByDate) return [column]
+  return closestCenter({ ...args, droppableContainers: tickets })
+}
 
 function matchesSearch(client, q) {
   if (!q) return true
@@ -26,11 +43,11 @@ function matchesSearch(client, q) {
   return [getClientName(client), client.email, client.phone].some((v) => v?.toLowerCase().includes(s))
 }
 
-function Column({ column, clients, children, actions, compact }) {
-  const { setNodeRef, isOver } = useDroppable({ id: column.id })
+function Column({ column, clients, children, actions, size }) {
+  const { setNodeRef, isOver } = useDroppable({ id: column.id, data: { type: 'column' } })
   return (
     <section ref={setNodeRef} aria-label={column.title}
-      className={`flex flex-col min-h-0 rounded-2xl border transition-colors ${compact ? 'flex-1' : 'h-full'} ${
+      className={`flex flex-col min-h-0 rounded-2xl border transition-colors ${size || 'h-full'} ${
         isOver ? 'bg-gray-200/70 border-gray-300' : 'bg-gray-100/70 border-transparent'
       }`}>
       <header className="flex items-center gap-2 px-3 pt-3 pb-2">
@@ -41,10 +58,12 @@ function Column({ column, clients, children, actions, compact }) {
       {column.expires && (
         <p className="px-3 -mt-1 pb-2 text-[11px] text-gray-400">נעלמים מהלוח אחרי {EXPIRE_DAYS} ימים</p>
       )}
-      <ul className="flex-1 min-h-[4rem] overflow-y-auto px-2 pb-2 space-y-2">
-        {children}
-        {clients.length === 0 && <li className="list-none text-center text-xs text-gray-400 py-4">אין לקוחות</li>}
-      </ul>
+      <SortableContext items={clients.map((c) => c.id)} strategy={column.sortedByDate ? keepOrder : verticalListSortingStrategy}>
+        <ul className="flex-1 min-h-[3rem] overflow-y-auto px-2 pb-2 space-y-2">
+          {children}
+          {clients.length === 0 && <li className="list-none text-center text-xs text-gray-400 py-4">אין לקוחות</li>}
+        </ul>
+      </SortableContext>
     </section>
   )
 }
@@ -76,7 +95,7 @@ export default function ClientBoard() {
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 220, tolerance: 6 } }),
     // Space picks up / drops a ticket; Enter opens the client card
-    useSensor(KeyboardSensor, { keyboardCodes: { start: ['Space'], cancel: ['Escape'], end: ['Space'] } }),
+    useSensor(KeyboardSensor, { keyboardCodes: { start: ['Space'], cancel: ['Escape'], end: ['Space'] }, coordinateGetter: sortableKeyboardCoordinates }),
   )
 
   useEffect(() => () => clearTimeout(toastTimer.current), [])
@@ -91,12 +110,21 @@ export default function ClientBoard() {
     toastTimer.current = setTimeout(() => setToast(null), 6000)
   }
 
-  async function move(client, columnId) {
+  // Moves a client to another column: at `index` among its tickets, or to the top
+  async function move(client, columnId, index = 0) {
     const from = columnOf(client)
     if (from === columnId) return
     const previous = Object.fromEntries(BOARD_FIELDS.map((k) => [k, client[k] ?? null]))
-    await updateClient(client.id, moveChanges(columnId, client))
+    const order = COLUMN_BY_ID[columnId].sortedByDate ? undefined : orderAt(allGroups[columnId], index)
+    await updateClient(client.id, moveChanges(columnId, client, order))
     showToast(`${getClientName(client) || 'הלקוח'} הועבר/ה ל״${COLUMN_BY_ID[columnId].title}״`, () => updateClient(client.id, previous))
+  }
+
+  // Places a client at `index` in its own column (manual order)
+  function reorder(client, index) {
+    const columnId = columnOf(client)
+    const others = allGroups[columnId].filter((c) => c.id !== client.id)
+    updateClient(client.id, { boardOrder: orderAt(others, index) })
   }
 
   async function removeFromBoard(client) {
@@ -140,9 +168,13 @@ export default function ClientBoard() {
   }
 
   function actionsFor(client) {
+    const list = allGroups[columnOf(client)]
+    const index = list.findIndex((c) => c.id === client.id)
     return {
       onOpen: () => navigate(`/dashboard/clients/${client.id}`, { state: FROM_BOARD }),
       onMove: (columnId) => move(client, columnId),
+      onReorder: (dir) => reorder(client, index + dir),
+      onShootDate: (date) => updateClient(client.id, { shootDate: date || null }),
       onRemove: () => removeFromBoard(client),
       onCallbackDate: (date) => updateClient(client.id, { callbackDate: date || null }),
       onPreShootSent: (sent) => updateClient(client.id, { preShootMessageSentAt: sent ? new Date() : null }),
@@ -153,9 +185,23 @@ export default function ClientBoard() {
 
   function handleDragEnd({ active, over }) {
     setActiveId(null)
-    if (!over) return
     const client = clients.find((c) => c.id === active.id)
-    if (client) move(client, over.id)
+    if (!over || !client) return
+    const from = columnOf(client)
+    const onColumn = !!COLUMN_BY_ID[over.id]
+    const overColumn = onColumn ? over.id : over.data.current?.columnId
+    if (!overColumn) return
+    // Dropped on a ticket: take its place. Dropped on the column itself: top of the column.
+    if (overColumn !== from) {
+      const target = allGroups[overColumn]
+      move(client, overColumn, onColumn ? 0 : Math.max(0, target.findIndex((c) => c.id === over.id)))
+      return
+    }
+    if (COLUMN_BY_ID[from].sortedByDate || onColumn || over.id === client.id) return
+    const list = allGroups[from]
+    const overIndex = list.findIndex((c) => c.id === over.id)
+    // Index among the other tickets: dropping on a ticket below lands after it, above lands before it (both = overIndex)
+    reorder(client, overIndex)
   }
 
   function columnActions(columnId) {
@@ -172,13 +218,16 @@ export default function ClientBoard() {
     return null
   }
 
-  function renderColumn(columnId, compact = false) {
+  function renderColumn(columnId) {
     const column = COLUMN_BY_ID[columnId]
+    const list = groups[columnId]
+    // Up/down in the menu only when the full column is shown (not while searching)
+    const full = !search && !column.sortedByDate
     return (
-      <Column key={columnId} column={column} clients={groups[columnId]} actions={columnActions(columnId)} compact={compact}>
-        {groups[columnId].map((c) => (
+      <Column key={columnId} column={column} clients={list} actions={columnActions(columnId)} size={STACK_SIZES[columnId]}>
+        {list.map((c, i) => (
           <BoardTicket key={c.id} client={c} columnId={columnId} typeName={typeMap[c.photoshootTypeId]} now={now}
-            actions={actionsFor(c)} />
+            actions={actionsFor(c)} position={{ canMoveUp: full && i > 0, canMoveDown: full && i < list.length - 1 }} />
         ))}
       </Column>
     )
@@ -205,16 +254,17 @@ export default function ClientBoard() {
         </div>
       </div>
 
-      <DndContext sensors={sensors} onDragStart={({ active }) => setActiveId(active.id)} onDragEnd={handleDragEnd}
+      <DndContext sensors={sensors} collisionDetection={boardCollision} onDragStart={({ active }) => setActiveId(active.id)} onDragEnd={handleDragEnd}
         onDragCancel={() => setActiveId(null)}
         accessibility={{
           screenReaderInstructions: { draggable: 'רווח להרמת הכרטיס, חיצים להזזה, רווח להנחה, Escape לביטול. Enter פותח את כרטיס הלקוח.' },
         }}>
-        <div className="flex-1 min-h-0 overflow-x-auto pb-2">
-          <div className="flex gap-3 h-full w-max">
+        {/* Columns share the width; below 15rem each, the board scrolls sideways */}
+        <div className="flex-1 min-h-0 overflow-x-auto overflow-y-hidden">
+          <div className="flex gap-3 h-full">
             {BOARD_SLOTS.map((slot) => (
-              <div key={slot.join('-')} className="w-60 shrink-0 h-full flex flex-col gap-3">
-                {slot.length === 1 ? renderColumn(slot[0]) : slot.map((id) => renderColumn(id, true))}
+              <div key={slot.join('-')} className="flex-1 min-w-[15rem] h-full flex flex-col gap-3">
+                {slot.map((id) => renderColumn(id))}
               </div>
             ))}
           </div>

@@ -92,10 +92,10 @@ describe('ClientBoard', () => {
     fireEvent.click(screen.getByRole('button', { name: 'פעולות עבור נועה כהן' }))
     fireEvent.click(within(screen.getByRole('menu')).getByText('לחזור ללקוח'))
     await waitFor(() => expect(mocks.updateClient).toHaveBeenCalledWith('n1',
-      { status: 'proposal_sent', boardColumn: 'callback', boardMovedAt: 'TS', boardHidden: false }))
+      { status: 'proposal_sent', boardColumn: 'callback', boardMovedAt: 'TS', boardHidden: false, boardOrder: expect.any(Number) }))
     expect(screen.getByText('נועה כהן הועבר/ה ל״לחזור ללקוח״')).toBeInTheDocument()
     fireEvent.click(screen.getByText('בטל'))
-    expect(mocks.updateClient).toHaveBeenLastCalledWith('n1', { status: 'new_lead', boardColumn: null, boardMovedAt: null, boardHidden: null })
+    expect(mocks.updateClient).toHaveBeenLastCalledWith('n1', { status: 'new_lead', boardColumn: null, boardMovedAt: null, boardHidden: null, boardOrder: null })
   })
 
   it('removes a finished client from the board early, one or the whole column', async () => {
@@ -117,12 +117,56 @@ describe('ClientBoard', () => {
     expect(within(screen.getByRole('menu')).queryByText('הסר מהלוח')).not.toBeInTheDocument()
   })
 
-  it('sets a callback date on the ticket', () => {
+  it('sets a callback date on the ticket with the calendar', () => {
     renderBoard()
-    fireEvent.change(screen.getByLabelText('תאריך לחזרה לרון לוי'), { target: { value: '2026-11-09' } })
-    const [id, data] = mocks.updateClient.mock.calls[0]
-    expect(id).toBe('c1')
-    expect(data.callbackDate.toISOString()).toBe('2026-11-09T00:00:00.000Z')
+    fireEvent.click(screen.getByRole('button', { name: 'תאריך לחזרה לרון לוי' }))
+    fireEvent.click(screen.getByRole('gridcell', { name: '9 בנובמבר 2026' }))
+    expect(mocks.updateClient).toHaveBeenCalledWith('c1', { callbackDate: new Date('2026-11-09T00:00:00Z') })
+    expect(mockNavigate).not.toHaveBeenCalled() // the click stays on the ticket
+  })
+
+  it('a ticket without a shoot date offers to add one, before the shoot', () => {
+    mocks.clients = [{ id: 'k2', firstName: 'אלה', lastName: 'רון', status: 'agreement_signed' }]
+    renderBoard()
+    const chip = within(col('סגירת חוזה והנחיות לבוש')).getByRole('button', { name: 'תאריך צילום לאלה רון' })
+    expect(chip).toHaveTextContent('תאריך צילום')
+    fireEvent.click(chip)
+    fireEvent.click(screen.getByRole('gridcell', { name: '20 בנובמבר 2026' }))
+    expect(mocks.updateClient).toHaveBeenCalledWith('k2', { shootDate: new Date('2026-11-20T00:00:00Z') })
+  })
+
+  it('₪, album and WhatsApp icons have hover hints', () => {
+    renderBoard()
+    expect(screen.getAllByRole('tooltip').map((t) => t.textContent)).toEqual(
+      expect.arrayContaining(['שילם מקדמה', 'כולל אלבום', 'שליחת הודעה בוואטסאפ']))
+  })
+
+  it('reorders a ticket inside its column from the menu', async () => {
+    mocks.clients = [
+      { id: 'x1', firstName: 'א', lastName: 'א', status: 'new_lead', boardOrder: 0 },
+      { id: 'x2', firstName: 'ב', lastName: 'ב', status: 'new_lead', boardOrder: 10 },
+      { id: 'x3', firstName: 'ג', lastName: 'ג', status: 'new_lead', boardOrder: 20 },
+    ]
+    renderBoard()
+    const names = () => within(col('לקוחות חדשים')).getAllByRole('button', { name: /^[אבג] [אבג]$/ }).map((b) => b.getAttribute('aria-label'))
+    expect(names()).toEqual(['א א', 'ב ב', 'ג ג'])
+    fireEvent.click(screen.getByRole('button', { name: 'פעולות עבור ג ג' }))
+    fireEvent.click(screen.getByText('הזזה למעלה'))
+    expect(mocks.updateClient).toHaveBeenCalledWith('x3', { boardOrder: 5 })
+    fireEvent.click(screen.getByRole('button', { name: 'פעולות עבור א א' }))
+    expect(screen.queryByText('הזזה למעלה')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByText('הזזה למטה'))
+    expect(mocks.updateClient).toHaveBeenLastCalledWith('x1', { boardOrder: 15 })
+  })
+
+  it('date-sorted columns have no manual order', () => {
+    mocks.clients = [
+      { id: 'y1', firstName: 'א', lastName: 'א', status: 'shoot_scheduled', shootDate: at('2026-11-05T00:00:00Z') },
+      { id: 'y2', firstName: 'ב', lastName: 'ב', status: 'shoot_scheduled', shootDate: at('2026-11-09T00:00:00Z') },
+    ]
+    renderBoard()
+    fireEvent.click(screen.getByRole('button', { name: 'פעולות עבור ב ב' }))
+    expect(screen.queryByText('הזזה למעלה')).not.toBeInTheDocument()
   })
 
   it('pre-shoot: opens the pre-shoot message for the client and marks it as sent', () => {
