@@ -5,7 +5,7 @@ import { SECTION_TITLES, WHATSAPP_URL } from '../../utils/dressGuides'
 // Warm palette taken from the logo and the original PDF guides
 const t = {
   page: 'bg-[#FBF7F2] text-[#5C4B3E]',
-  heading: 'font-serif text-[#6B4A35]',
+  heading: 'font-display font-light text-[#6B4A35]',
   accent: 'text-[#B8956A]',
   card: 'bg-white/80 border border-[#EFE4D6] rounded-3xl shadow-[0_2px_20px_-8px_rgba(107,74,53,0.18)]',
 }
@@ -14,7 +14,7 @@ function SectionTitle({ children }) {
   return (
     <div className="flex items-center gap-3 mb-5">
       <span className="h-px flex-1 bg-[#E8D9C5]" />
-      <h2 className={`${t.heading} text-xl sm:text-2xl font-medium`}>{children}</h2>
+      <h2 className={`${t.heading} text-xl sm:text-2xl`}>{children}</h2>
       <span className="h-px flex-1 bg-[#E8D9C5]" />
     </div>
   )
@@ -129,8 +129,8 @@ export default function DressGuideView({ guide, photos = [] }) {
         <header className="text-center space-y-3 pb-2">
           <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Revital Parzelina Photography"
             className="w-56 sm:w-64 mx-auto mb-6" />
-          {guide.title && <h1 className={`${t.heading} text-3xl sm:text-4xl font-medium leading-tight`}>{guide.title}</h1>}
-          {guide.subtitle && <p className={`${t.accent} font-serif text-2xl`}>{guide.subtitle}</p>}
+          {guide.title && <h1 className={`${t.heading} text-3xl sm:text-4xl leading-tight`}>{guide.title}</h1>}
+          {guide.subtitle && <p className={`${t.accent} font-display font-light text-2xl`}>{guide.subtitle}</p>}
           {guide.intro && <p className="max-w-xl mx-auto leading-relaxed text-[17px] whitespace-pre-line pt-2">{guide.intro}</p>}
         </header>
 

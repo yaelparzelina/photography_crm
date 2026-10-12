@@ -5,7 +5,7 @@ export default {
     extend: {
       fontFamily: {
         sans: ['Heebo', 'Noto Color Emoji', 'sans-serif'],
-        serif: ['Frank Ruhl Libre', 'Noto Color Emoji', 'serif'],
+        display: ['Rubik', 'Heebo', 'Noto Color Emoji', 'sans-serif'],
       },
     },
   },

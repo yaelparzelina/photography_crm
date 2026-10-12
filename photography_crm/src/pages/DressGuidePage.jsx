@@ -27,7 +27,7 @@ export default function DressGuidePage() {
     return (
       <div className="min-h-screen bg-[#FBF7F2] flex flex-col items-center justify-center gap-3 px-4 text-center text-[#5C4B3E]">
         <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Revital Parzelina Photography" className="w-48 mb-4" />
-        <p className="font-serif text-xl text-[#6B4A35]">הדף לא נמצא</p>
+        <p className="font-display font-light text-xl text-[#6B4A35]">הדף לא נמצא</p>
         <p className="text-sm">ייתכן שהקישור השתנה – אפשר לבקש ממני קישור חדש בוואטסאפ.</p>
       </div>
     )
