@@ -40,7 +40,7 @@ vi.mock('react-router-dom', async () => {
   return { ...actual, useNavigate: () => mockNavigate }
 })
 
-// Mock NewClientModal to isolate Dashboard from its Firebase dependencies
+// Mock NewClientModal to isolate ClientsDatabase from its Firebase dependencies
 vi.mock('../../components/NewClientModal', () => ({
   default: ({ isOpen, onClose }) =>
     isOpen ? (
@@ -61,7 +61,7 @@ vi.mock('../../hooks/usePhotoshootTypes', () => ({
   usePhotoshootTypes: () => mockUsePhotoshootTypes(),
 }))
 
-import Dashboard from '../Dashboard'
+import ClientsDatabase from '../ClientsDatabase'
 
 const defaultTypes = [
   { id: 'type1', name: 'צילום חתונה' },
@@ -97,15 +97,15 @@ const defaultClients = [
   },
 ]
 
-function renderDashboard() {
+function renderPage() {
   return render(
     <MemoryRouter>
-      <Dashboard />
+      <ClientsDatabase />
     </MemoryRouter>
   )
 }
 
-describe('Dashboard', () => {
+describe('ClientsDatabase', () => {
   beforeEach(() => {
     mockNavigate.mockReset()
     mockUseClients.mockReturnValue({
@@ -123,18 +123,18 @@ describe('Dashboard', () => {
 
   it('shows loading state when loading is true', () => {
     mockUseClients.mockReturnValue({ clients: [], loading: true })
-    renderDashboard()
+    renderPage()
     expect(screen.getByText('טוען...')).toBeInTheDocument()
   })
 
   it('shows "לא נמצאו לקוחות" when clients array is empty', () => {
     mockUseClients.mockReturnValue({ clients: [], loading: false })
-    renderDashboard()
+    renderPage()
     expect(screen.getByText('לא נמצאו לקוחות')).toBeInTheDocument()
   })
 
   it('renders client rows with name, status select, and shoot date', () => {
-    renderDashboard()
+    renderPage()
     expect(screen.getByText('ישראל ישראלי')).toBeInTheDocument()
     expect(screen.getByText('שרה כהן')).toBeInTheDocument()
     // Status is now a colorful badge button — default sort is createdAt desc
@@ -147,7 +147,7 @@ describe('Dashboard', () => {
   })
 
   it('filters clients by firstName search', () => {
-    renderDashboard()
+    renderPage()
     const input = screen.getByPlaceholderText('חיפוש לפי שם, טלפון, מייל...')
     fireEvent.change(input, { target: { value: 'ישראל' } })
     expect(screen.getByText('ישראל ישראלי')).toBeInTheDocument()
@@ -155,7 +155,7 @@ describe('Dashboard', () => {
   })
 
   it('filters clients by phone search', () => {
-    renderDashboard()
+    renderPage()
     const input = screen.getByPlaceholderText('חיפוש לפי שם, טלפון, מייל...')
     fireEvent.change(input, { target: { value: '052' } })
     expect(screen.queryByText('ישראל ישראלי')).not.toBeInTheDocument()
@@ -163,7 +163,7 @@ describe('Dashboard', () => {
   })
 
   it('filters clients by email search', () => {
-    renderDashboard()
+    renderPage()
     const input = screen.getByPlaceholderText('חיפוש לפי שם, טלפון, מייל...')
     fireEvent.change(input, { target: { value: 'sarah@' } })
     expect(screen.queryByText('ישראל ישראלי')).not.toBeInTheDocument()
@@ -171,7 +171,7 @@ describe('Dashboard', () => {
   })
 
   it('filters clients by several statuses with checkboxes, and "נקה" shows all again', () => {
-    renderDashboard()
+    renderPage()
     fireEvent.click(screen.getByRole('button', { name: /כל הסטטוסים/ }))
     const panel = screen.getByRole('listbox')
     fireEvent.click(within(panel).getByLabelText('הסתיים'))
@@ -192,7 +192,7 @@ describe('Dashboard', () => {
       loading: false,
       updateClient: vi.fn(),
     })
-    renderDashboard()
+    renderPage()
     fireEvent.click(screen.getByRole('button', { name: /כל הסטטוסים/ }))
     const panel = screen.getByRole('listbox')
     fireEvent.click(within(panel).getByText('הכל בתהליך'))
@@ -220,7 +220,7 @@ describe('Dashboard', () => {
   })
 
   it('status menu opens upwards for a row at the bottom of the screen, downwards otherwise', () => {
-    renderDashboard()
+    renderPage()
     const badge = screen.getAllByRole('button', { name: /ליד חדש/ })[0]
     badge.getBoundingClientRect = () => ({ top: window.innerHeight - 30, bottom: window.innerHeight - 6, right: 500, left: 400 })
     fireEvent.click(badge)
@@ -238,13 +238,13 @@ describe('Dashboard', () => {
   })
 
   it('clicking a row navigates to /dashboard/clients/:id', () => {
-    renderDashboard()
+    renderPage()
     fireEvent.click(screen.getByText('ישראל ישראלי'))
-    expect(mockNavigate).toHaveBeenCalledWith('/dashboard/clients/client1')
+    expect(mockNavigate).toHaveBeenCalledWith('/dashboard/clients/client1', { state: { from: '/dashboard/clients', fromLabel: 'מאגר הלקוחות' } })
   })
 
   it('clicking "+ לקוח חדש" button opens the modal', () => {
-    renderDashboard()
+    renderPage()
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
     fireEvent.click(screen.getByText('לקוח חדש'))
     expect(screen.getByRole('dialog')).toBeInTheDocument()
@@ -252,7 +252,7 @@ describe('Dashboard', () => {
   })
 
   it('clicking name column header sorts by firstName asc then desc on second click', () => {
-    renderDashboard()
+    renderPage()
     const nameHeader = screen.getByRole('columnheader', { name: /שם/ })
     // First click: sort by firstName asc — י (yod) comes before ש (shin) in Hebrew alphabet
     fireEvent.click(nameHeader)
@@ -267,7 +267,7 @@ describe('Dashboard', () => {
   })
 
   it('shows photoshoot type name from typeMap', () => {
-    renderDashboard()
+    renderPage()
     expect(screen.getByText('צילום חתונה')).toBeInTheDocument()
     expect(screen.getByText('צילום משפחה')).toBeInTheDocument()
   })

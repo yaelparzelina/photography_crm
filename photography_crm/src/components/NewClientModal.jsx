@@ -7,7 +7,8 @@ import { inputClass } from './ui/styles'
 import { useClients } from '../hooks/useClients'
 import { usePhotoshootTypes } from '../hooks/usePhotoshootTypes'
 
-export default function NewClientModal({ isOpen, onClose }) {
+// `openAfterCreate`: go to the new client's card (the board keeps the owner on the board instead)
+export default function NewClientModal({ isOpen, onClose, openAfterCreate = true }) {
   const navigate = useNavigate()
   const { createClient } = useClients()
   const { types } = usePhotoshootTypes()
@@ -35,7 +36,8 @@ export default function NewClientModal({ isOpen, onClose }) {
     try {
       const id = await createClient(form)
       onClose()
-      navigate(`/dashboard/clients/${id}`)
+      setForm({ firstName: '', lastName: '', phone: '', photoshootTypeId: '' })
+      if (openAfterCreate) navigate(`/dashboard/clients/${id}`)
     } finally {
       setSaving(false)
     }

@@ -1,11 +1,29 @@
+import { useEffect } from 'react'
 import { collection, addDoc, updateDoc, deleteDoc, doc, getDoc, query, orderBy, serverTimestamp, writeBatch } from 'firebase/firestore'
 import { useCollection } from 'react-firebase-hooks/firestore'
 import { db } from '../firebase'
-import { DEFAULT_TEMPLATES } from '../utils/messageTemplate'
+import { DEFAULT_TEMPLATES, PRE_SHOOT_TEMPLATE } from '../utils/messageTemplate'
 
 const ref = collection(db, 'messageTemplates')
 const q = query(ref, orderBy('order', 'asc'))
 const seededFlag = doc(db, 'settings', 'messageTemplates')
+const preShootFlag = doc(db, 'settings', 'preShootTemplate')
+
+// Adds the placeholder pre-shoot message once (never again, even if it is deleted later)
+export async function seedPreShootTemplateIfNeeded() {
+  if ((await getDoc(preShootFlag)).exists()) return false
+  const batch = writeBatch(db)
+  batch.set(doc(ref), { ...PRE_SHOOT_TEMPLATE, order: Date.now(), createdAt: serverTimestamp() })
+  batch.set(preShootFlag, { seeded: true, at: serverTimestamp() })
+  await batch.commit()
+  return true
+}
+
+export function usePreShootTemplateSeed() {
+  useEffect(() => {
+    seedPreShootTemplateIfNeeded().catch((err) => console.error('Pre-shoot message seed failed', err))
+  }, [])
+}
 
 export function useMessageTemplates() {
   const [snapshot, loading] = useCollection(q)

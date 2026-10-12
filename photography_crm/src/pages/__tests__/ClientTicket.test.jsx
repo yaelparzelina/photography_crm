@@ -456,4 +456,29 @@ describe('ClientTicket', () => {
     renderTicket()
     expect(screen.getByText('ממתין לחתימת לקוח')).toBeInTheDocument()
   })
+
+  it('a status changed on the card moves the client on the board; other saves leave the board alone', async () => {
+    setupOnSnapshot(makeSnapshot({ data: { ...clientData, boardColumn: 'callback' } }))
+    renderTicket()
+    fireEvent.change(screen.getByLabelText('תאריך לחזרה ללקוח'), { target: { value: '2026-11-09' } })
+    fireEvent.click(screen.getByText('שמור שינויים'))
+    await waitFor(() => expect(mockUpdateDoc).toHaveBeenCalled())
+    let data = mockUpdateDoc.mock.calls[0][1]
+    expect(data.callbackDate.toISOString()).toBe('2026-11-09T00:00:00.000Z')
+    expect(data.boardColumn).toBe('callback')
+
+    mockUpdateDoc.mockClear()
+    fireEvent.change(screen.getByLabelText('סטטוס'), { target: { value: 'shoot_scheduled' } })
+    fireEvent.click(screen.getByText('שמור שינויים'))
+    await waitFor(() => expect(mockUpdateDoc).toHaveBeenCalled())
+    data = mockUpdateDoc.mock.calls[0][1]
+    expect(data).toMatchObject({ status: 'shoot_scheduled', boardColumn: null, boardHidden: false })
+  })
+
+  it('back button returns to the board by default', () => {
+    setupOnSnapshot(makeSnapshot())
+    renderTicket()
+    fireEvent.click(screen.getAllByRole('button', { name: /חזרה ללוח הלקוחות/ })[0])
+    expect(mockNavigate).toHaveBeenCalledWith('/dashboard')
+  })
 })

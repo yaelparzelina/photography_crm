@@ -2,7 +2,8 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import ProtectedRoute from './components/ProtectedRoute'
 import DashboardLayout from './components/layout/DashboardLayout'
 import Login from './pages/Login'
-import Dashboard from './pages/Dashboard'
+import ClientBoard from './pages/ClientBoard'
+import ClientsDatabase from './pages/ClientsDatabase'
 import ClientTicket from './pages/ClientTicket'
 import Settings from './pages/Settings'
 import Messages from './pages/Messages'
@@ -24,7 +25,8 @@ export default function App() {
       <Route path="/dress/:slug" element={<DressGuidePage />} />
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard/*" element={<DashboardLayout />}>
-          <Route index element={<Dashboard />} />
+          <Route index element={<ClientBoard />} />
+          <Route path="clients" element={<ClientsDatabase />} />
           <Route path="clients/:id" element={<ClientTicket />} />
           <Route path="messages" element={<Messages />} />
           <Route path="mailing-list" element={<MailingList />} />

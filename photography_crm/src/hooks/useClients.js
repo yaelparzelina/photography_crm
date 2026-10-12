@@ -16,6 +16,7 @@ export function useClients() {
       agreementSigned: false, notes: '', eventDate: null, gender: 'female', publicityApproved: false,
       ...data,
       createdAt: serverTimestamp(),
+      boardMovedAt: serverTimestamp(),
     })
     return docRef.id
   }

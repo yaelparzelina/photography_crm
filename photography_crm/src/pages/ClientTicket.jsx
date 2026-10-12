@@ -31,6 +31,7 @@ import CopyLink from '../components/ui/CopyLink'
 import { inputClass, itemClass } from '../components/ui/styles'
 import { printElement } from '../utils/printDocument'
 import { STATUS_OPTIONS } from '../utils/statusConfig'
+import { statusChanges } from '../utils/board'
 import { getClientName, signedDocumentTitle } from '../utils/clientUtils'
 import { formatDate, toInputDate, fromInputDate } from '../utils/dateUtils'
 import { ArrowRight, Trash2, FileText, Eye, Download, MessageCircle } from 'lucide-react'
@@ -56,9 +57,9 @@ export default function ClientTicket() {
   const { id } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
-  // Where to go back to: the page that opened this card (e.g. the mailing list), else the client list
+  // Where to go back to: the page that opened this card (e.g. the mailing list), else the client board
   const returnTo = location.state?.from || '/dashboard'
-  const backLabel = location.state?.fromLabel ? `חזרה ל${location.state.fromLabel}` : 'חזרה לרשימה'
+  const backLabel = `חזרה ל${location.state?.fromLabel || 'לוח הלקוחות'}`
   const { deleteClient } = useClients()
   const { types } = usePhotoshootTypes()
 
@@ -234,7 +235,11 @@ export default function ClientTicket() {
         businessDays: normalizeBusinessDays(form.businessDays),
         publicityApproved: !!form.publicityApproved,
         dateOfBirth: form.dateOfBirth || null,
+        callbackDate: form.callbackDate || null,
+        preShootMessageSentAt: form.preShootMessageSentAt || null,
         ...(albumData.includesAlbum != null ? normalizeAlbum(albumData) : {}),
+        // A status changed here places the client in that status' column on the board
+        ...((form.status || 'new_lead') !== (client.status || 'new_lead') ? statusChanges(form.status) : {}),
       })
       localStorage.removeItem(`draft_${id}`)
       editedRef.current.clear()
@@ -325,9 +330,25 @@ export default function ClientTicket() {
       </div>
 
       <Card title="סטטוס" className="mb-4">
-        <select className={inputClass()} value={form.status || 'new_lead'} onChange={(e) => set('status', e.target.value)}>
-          {STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </select>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="sm:col-span-2">
+            <select className={inputClass()} value={form.status || 'new_lead'} aria-label="סטטוס" onChange={(e) => set('status', e.target.value)}>
+              {STATUS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </div>
+          <Field label="תאריך לחזרה ללקוח">
+            <input type="date" max="9999-12-31" className={inputClass()} aria-label="תאריך לחזרה ללקוח"
+              value={form.callbackDate ? toInputDate(form.callbackDate) : ''}
+              onChange={(e) => set('callbackDate', fromInputDate(e.target.value))} />
+          </Field>
+          <Field label="הודעה לפני צילום">
+            <div className="flex items-center min-h-[42px]">
+              <Toggle text={form.preShootMessageSentAt ? `נשלחה ב-${formatDate(form.preShootMessageSentAt)}` : 'טרם נשלחה'}
+                checked={!!form.preShootMessageSentAt}
+                onChange={(on) => set('preShootMessageSentAt', on ? new Date() : null)} />
+            </div>
+          </Field>
+        </div>
       </Card>
 
       <Card title="פרטי לקוח" className="mb-4">

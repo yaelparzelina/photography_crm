@@ -1,6 +1,6 @@
 // Renders the whole app (no component mocks) for a logged-in user on every dashboard route,
 // with Firebase replaced by in-memory data. Catches crashes that isolated component tests miss.
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, within } from '@testing-library/react'
 import { StrictMode } from 'react'
 import { MemoryRouter } from 'react-router-dom'
 import { vi, describe, it, expect, beforeEach } from 'vitest'
@@ -73,8 +73,17 @@ function renderAt(path) {
 describe('App smoke (logged in)', () => {
   beforeEach(() => localStorage.clear())
 
-  it('dashboard renders clients and the in-progress filter', () => {
+  it('home page is the client board, with tickets in their columns', () => {
     renderAt('/dashboard')
+    expect(screen.getByRole('heading', { name: 'לוח לקוחות' })).toBeInTheDocument()
+    const newCol = screen.getByRole('region', { name: 'לקוחות חדשים' })
+    expect(within(newCol).getByText('לקוח ישן')).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'לא סגר' })).toBeInTheDocument()
+  })
+
+  it('clients database renders clients and the in-progress filter', () => {
+    renderAt('/dashboard/clients')
+    expect(screen.getByRole('heading', { name: 'מאגר לקוחות' })).toBeInTheDocument()
     expect(screen.getByText('לקוח ישן')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: /כל הסטטוסים/ }))
     fireEvent.click(screen.getByText('הכל בתהליך'))
@@ -165,11 +174,18 @@ describe('App smoke (logged in)', () => {
     sessionStorage.clear()
   })
 
-  it('opening a client from the home page and pressing back returns to the home page', () => {
+  it('opening a client from the board and pressing back returns to the board', () => {
     renderAt('/dashboard')
     fireEvent.click(screen.getByText('לקוח ישן'))
-    fireEvent.click(screen.getAllByRole('button', { name: /חזרה לרשימה/ })[0])
-    expect(screen.getByRole('heading', { name: 'לקוחות' })).toBeInTheDocument()
+    fireEvent.click(screen.getAllByRole('button', { name: /חזרה ללוח הלקוחות/ })[0])
+    expect(screen.getByRole('heading', { name: 'לוח לקוחות' })).toBeInTheDocument()
+  })
+
+  it('opening a client from the clients database and pressing back returns there', () => {
+    renderAt('/dashboard/clients')
+    fireEvent.click(screen.getByText('לקוח ישן'))
+    fireEvent.click(screen.getAllByRole('button', { name: /חזרה למאגר הלקוחות/ })[0])
+    expect(screen.getByRole('heading', { name: 'מאגר לקוחות' })).toBeInTheDocument()
   })
 
   it('settings packages tab renders and edits a package', () => {

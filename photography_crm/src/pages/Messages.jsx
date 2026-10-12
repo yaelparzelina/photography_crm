@@ -14,6 +14,8 @@ export default function Messages() {
   const navigate = useNavigate()
   // Set when opened from a client page: { id, firstName, fullName, gender, includesAlbum }
   const client = location.state?.client || null
+  // Set when opened for specific messages (e.g. from the board): { templateIds, label }
+  const focus = location.state?.focus || null
   const { templates, loading, createTemplate, updateTemplate, deleteTemplate, moveTemplate, seedIfNeeded } = useMessageTemplates()
   const [editing, setEditing] = useState(null) // null | 'new' | template
   const [deleteTarget, setDeleteTarget] = useState(null)
@@ -26,8 +28,15 @@ export default function Messages() {
   }, [loading, templates.length, seedIfNeeded])
 
   function clearClient() {
-    navigate('/dashboard/messages', { replace: true, state: null })
+    navigate('/dashboard/messages', { replace: true, state: focus ? { focus } : null })
   }
+
+  function showAll() {
+    navigate('/dashboard/messages', { replace: true, state: client ? { client } : null })
+  }
+
+  const focused = focus ? templates.filter((t) => focus.templateIds?.includes(t.id)) : []
+  const shown = focused.length ? focused : templates
 
   return (
     <div className="max-w-3xl">
@@ -48,18 +57,34 @@ export default function Messages() {
         </div>
       )}
 
+      {focus && !loading && (
+        <div className={`${itemClass} flex items-center gap-3 px-4 py-3 mb-4 bg-amber-50/60`}>
+          <p className="text-sm text-gray-700 flex-1">
+            {focused.length
+              ? <>מוצגות רק: <span className="font-medium">{focus.label}</span></>
+              : <>לא נמצאה הודעה מתאימה ({focus.label}) – מוצגות כל ההודעות</>}
+          </p>
+          {focused.length > 0 && <Button variant="link" size="sm" onClick={showAll}>הצג את כל ההודעות</Button>}
+        </div>
+      )}
+
       {loading ? (
         <div className="text-center py-20 text-gray-400">טוען...</div>
       ) : templates.length === 0 ? (
         <div className="text-center py-20 text-gray-400">אין הודעות עדיין</div>
       ) : (
         <div className="space-y-4">
-          {templates.map((t, i) => (
+          {shown.map((t) => {
+            const i = templates.indexOf(t)
+            // Reordering only makes sense when every message is shown
+            const reorder = shown === templates
+            return (
             <MessageCard key={`${t.id}-${client?.id || 'none'}`} template={t} client={client}
-              isFirst={i === 0} isLast={i === templates.length - 1}
+              isFirst={!reorder || i === 0} isLast={!reorder || i === templates.length - 1}
               onMoveUp={() => moveTemplate(i, -1)} onMoveDown={() => moveTemplate(i, 1)}
               onEdit={() => setEditing(t)} onDelete={() => setDeleteTarget(t)} />
-          ))}
+            )
+          })}
         </div>
       )}
 

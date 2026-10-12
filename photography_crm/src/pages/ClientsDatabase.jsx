@@ -12,6 +12,7 @@ import { cardClass } from '../components/ui/styles'
 import { formatDate } from '../utils/dateUtils'
 import { STATUS_CONFIG, STATUS_OPTIONS, IN_PROGRESS_PRESET } from '../utils/statusConfig'
 import { getClientName } from '../utils/clientUtils'
+import { statusChanges } from '../utils/board'
 
 const MENU_GAP = 12 // keep this much space from the screen edge
 const MENU_HEIGHT = STATUS_OPTIONS.length * 32 + 10 // approximate menu height
@@ -99,7 +100,8 @@ function SortIcon({ field, sortField, sortDir }) {
 
 const thClass = 'px-4 py-3 text-xs font-medium text-gray-500 cursor-pointer hover:text-gray-900 select-none'
 
-export default function Dashboard() {
+// All clients (including the ones that left the board), as a searchable, sortable list
+export default function ClientsDatabase() {
   const navigate = useNavigate()
   const { clients, loading, updateClient } = useClients()
   const { types } = usePhotoshootTypes()
@@ -152,7 +154,7 @@ export default function Dashboard() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900">לקוחות</h1>
+        <h1 className="text-2xl font-semibold text-gray-900">מאגר לקוחות</h1>
         <Button onClick={() => setShowNew(true)}>
           <Plus className="w-4 h-4" /> לקוח חדש
         </Button>
@@ -192,11 +194,11 @@ export default function Dashboard() {
               <tr><td colSpan={6} className="text-center py-12 text-gray-400">לא נמצאו לקוחות</td></tr>
             )}
             {rows.map((c) => (
-              <tr key={c.id} onClick={() => navigate(`/dashboard/clients/${c.id}`)}
+              <tr key={c.id} onClick={() => navigate(`/dashboard/clients/${c.id}`, { state: { from: '/dashboard/clients', fromLabel: 'מאגר הלקוחות' } })}
                 className="cursor-pointer hover:bg-gray-50 transition-colors">
                 <td className="px-4 py-3 font-medium text-gray-900">{getClientName(c) || '—'}</td>
                 <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                  <StatusSelect status={c.status} onUpdate={(val) => updateClient(c.id, { status: val })} />
+                  <StatusSelect status={c.status} onUpdate={(val) => updateClient(c.id, statusChanges(val))} />
                 </td>
                 <td className="px-4 py-3 text-gray-600">{typeMap[c.photoshootTypeId] || '—'}</td>
                 <td className="px-4 py-3 text-gray-600">{c.shootDate ? formatDate(c.shootDate) : '—'}</td>

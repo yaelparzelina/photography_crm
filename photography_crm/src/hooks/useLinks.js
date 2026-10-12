@@ -1,6 +1,7 @@
 import { collection, doc, setDoc, updateDoc, getDocs, query, where, serverTimestamp, writeBatch } from 'firebase/firestore'
 import { db } from '../firebase'
 import { generateLinkId } from '../utils/linkGenerator'
+import { statusChanges } from '../utils/board'
 
 async function deactivateExisting(clientId, type) {
   const snap = await getDocs(
@@ -30,7 +31,8 @@ export function useLinks() {
       clientId, type: 'agreement', active: true, ...snapshot, createdAt: serverTimestamp(),
     })
     batch.update(doc(db, 'clients', clientId), {
-      ...clientUpdates, agreementSigned: false, agreementSignedAt: null, status: 'agreement_sent',
+      ...clientUpdates, agreementSigned: false, agreementSignedAt: null, agreementSentAt: serverTimestamp(),
+      ...statusChanges('agreement_sent'),
     })
     await batch.commit()
     return linkId

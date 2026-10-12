@@ -1,10 +1,11 @@
-import { Outlet, NavLink, useNavigate } from 'react-router-dom'
+import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { signOut } from 'firebase/auth'
 import { auth } from '../../firebase'
-import { Camera, Users, Settings, LogOut, MessageCircle, Mail, Shirt } from 'lucide-react'
+import { Camera, Users, Settings, LogOut, MessageCircle, Mail, Shirt, LayoutGrid } from 'lucide-react'
 import { useClients } from '../../hooks/useClients'
 import { useUnsubscribeSync } from '../../hooks/useNewsletter'
 import { useDressGuidesSeed } from '../../hooks/useDressGuides'
+import { usePreShootTemplateSeed } from '../../hooks/useMessageTemplates'
 
 const navLinkClass = ({ isActive }) =>
   `flex items-center gap-1.5 text-sm transition-colors ${
@@ -13,11 +14,14 @@ const navLinkClass = ({ isActive }) =>
 
 export default function DashboardLayout() {
   const navigate = useNavigate()
+  // The board uses the full screen width; other pages keep a readable width
+  const wide = useLocation().pathname === '/dashboard'
   const { clients, loading: clientsLoading } = useClients()
   // Applies requests from the public unsubscribe page to the matching client records
   useUnsubscribeSync(clients, clientsLoading)
   // Adds the starter dress guides (and their messages) on first use
   useDressGuidesSeed()
+  usePreShootTemplateSeed()
 
   async function handleLogout() {
     try {
@@ -38,7 +42,10 @@ export default function DashboardLayout() {
         </NavLink>
         <div className="flex items-center gap-5">
           <NavLink to="/dashboard" end className={navLinkClass}>
-            <Users className="w-4 h-4" /> לקוחות
+            <LayoutGrid className="w-4 h-4" /> לוח לקוחות
+          </NavLink>
+          <NavLink to="/dashboard/clients" end className={navLinkClass}>
+            <Users className="w-4 h-4" /> מאגר לקוחות
           </NavLink>
           <NavLink to="/dashboard/messages" className={navLinkClass}>
             <MessageCircle className="w-4 h-4" /> הודעות ללקוח
@@ -57,7 +64,7 @@ export default function DashboardLayout() {
           </button>
         </div>
       </nav>
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+      <main className={wide ? 'px-4 sm:px-6 py-6' : 'max-w-7xl mx-auto px-4 sm:px-6 py-8'}>
         <Outlet />
       </main>
     </div>

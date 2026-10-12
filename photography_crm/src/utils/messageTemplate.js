@@ -140,6 +140,21 @@ https://www.facebook.com/revitalphotography
 גוגל:
 https://g.page/r/CaD0Jk1TrLYnEBM/review`
 
+// Placeholder for the message sent before a shoot (opened from the board's "לפני צילום" column).
+// The owner replaces the text; `kind` lets the board find it even if the title changes.
+export const PRE_SHOOT_KIND = 'pre_shoot'
+export const PRE_SHOOT_TEMPLATE = {
+  title: 'הודעה לפני צילום',
+  kind: PRE_SHOOT_KIND,
+  hasGender: false,
+  hasAlbum: false,
+  variants: {
+    f_base: `היי {שם},
+מזכירה שהצילומים שלנו ב-___ בשעה ___ ב___ 📸
+(טקסט זמני – יש לעדכן את ההודעה)`,
+  },
+}
+
 export const DEFAULT_TEMPLATES = [
   {
     title: 'התמונות מוכנות',

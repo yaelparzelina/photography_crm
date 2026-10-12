@@ -1,0 +1,256 @@
+import { useState, useMemo, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
+import {
+  DndContext, DragOverlay, PointerSensor, TouchSensor, KeyboardSensor, useSensor, useSensors, useDroppable,
+} from '@dnd-kit/core'
+import { Plus, Search, X, EyeOff } from 'lucide-react'
+import { useClients } from '../hooks/useClients'
+import { usePhotoshootTypes } from '../hooks/usePhotoshootTypes'
+import { useMessageTemplates } from '../hooks/useMessageTemplates'
+import { useDressGuides } from '../hooks/useDressGuides'
+import NewClientModal from '../components/NewClientModal'
+import BoardTicket, { TicketCard } from '../components/board/BoardTicket'
+import Button from '../components/ui/Button'
+import IconButton from '../components/ui/IconButton'
+import ConfirmDialog from '../components/ui/ConfirmDialog'
+import { BOARD_SLOTS, COLUMN_BY_ID, EXPIRE_DAYS, groupBoard, columnOf, moveChanges } from '../utils/board'
+import { PRE_SHOOT_KIND } from '../utils/messageTemplate'
+import { getClientName } from '../utils/clientUtils'
+
+const FROM_BOARD = { from: '/dashboard', fromLabel: 'לוח הלקוחות' }
+const BOARD_FIELDS = ['status', 'boardColumn', 'boardMovedAt', 'boardHidden']
+
+function matchesSearch(client, q) {
+  if (!q) return true
+  const s = q.toLowerCase()
+  return [getClientName(client), client.email, client.phone].some((v) => v?.toLowerCase().includes(s))
+}
+
+function Column({ column, clients, children, actions, compact }) {
+  const { setNodeRef, isOver } = useDroppable({ id: column.id })
+  return (
+    <section ref={setNodeRef} aria-label={column.title}
+      className={`flex flex-col min-h-0 rounded-2xl border transition-colors ${compact ? 'flex-1' : 'h-full'} ${
+        isOver ? 'bg-gray-200/70 border-gray-300' : 'bg-gray-100/70 border-transparent'
+      }`}>
+      <header className="flex items-center gap-2 px-3 pt-3 pb-2">
+        <h2 className="text-sm font-semibold text-gray-800 truncate">{column.title}</h2>
+        <span className="text-xs text-gray-400 tabular-nums">{clients.length}</span>
+        <div className="ms-auto flex items-center gap-1">{actions}</div>
+      </header>
+      {column.expires && (
+        <p className="px-3 -mt-1 pb-2 text-[11px] text-gray-400">נעלמים מהלוח אחרי {EXPIRE_DAYS} ימים</p>
+      )}
+      <ul className="flex-1 min-h-[4rem] overflow-y-auto px-2 pb-2 space-y-2">
+        {children}
+        {clients.length === 0 && <li className="list-none text-center text-xs text-gray-400 py-4">אין לקוחות</li>}
+      </ul>
+    </section>
+  )
+}
+
+export default function ClientBoard() {
+  const navigate = useNavigate()
+  const { clients, loading, updateClient } = useClients()
+  const { types } = usePhotoshootTypes()
+  const { templates } = useMessageTemplates()
+  const { guides } = useDressGuides()
+  const [search, setSearch] = useState('')
+  const [showNew, setShowNew] = useState(false)
+  const [activeId, setActiveId] = useState(null)
+  const [toast, setToast] = useState(null) // { text, undo }
+  const [clearTarget, setClearTarget] = useState(null) // column id to remove from the board
+  const toastTimer = useRef(null)
+  // Today's date for tags and expiry, refreshed so a page left open stays correct after midnight
+  const [now, setNow] = useState(() => new Date())
+
+  const typeMap = useMemo(() => Object.fromEntries(types.map((t) => [t.id, t.name])), [types])
+  const groups = useMemo(
+    () => groupBoard(clients.filter((c) => matchesSearch(c, search)), now),
+    [clients, search, now]
+  )
+  const allGroups = useMemo(() => groupBoard(clients, now), [clients, now])
+  const activeClient = activeId ? clients.find((c) => c.id === activeId) : null
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 220, tolerance: 6 } }),
+    // Space picks up / drops a ticket; Enter opens the client card
+    useSensor(KeyboardSensor, { keyboardCodes: { start: ['Space'], cancel: ['Escape'], end: ['Space'] } }),
+  )
+
+  useEffect(() => () => clearTimeout(toastTimer.current), [])
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 30 * 60 * 1000)
+    return () => clearInterval(t)
+  }, [])
+
+  function showToast(text, undo) {
+    clearTimeout(toastTimer.current)
+    setToast({ text, undo })
+    toastTimer.current = setTimeout(() => setToast(null), 6000)
+  }
+
+  async function move(client, columnId) {
+    const from = columnOf(client)
+    if (from === columnId) return
+    const previous = Object.fromEntries(BOARD_FIELDS.map((k) => [k, client[k] ?? null]))
+    await updateClient(client.id, moveChanges(columnId, client))
+    showToast(`${getClientName(client) || 'הלקוח'} הועבר/ה ל״${COLUMN_BY_ID[columnId].title}״`, () => updateClient(client.id, previous))
+  }
+
+  async function removeFromBoard(client) {
+    await updateClient(client.id, { boardHidden: true })
+    showToast(`${getClientName(client) || 'הלקוח'} הוסר/ה מהלוח (נשאר/ת במאגר הלקוחות)`, () => updateClient(client.id, { boardHidden: false }))
+  }
+
+  async function clearColumn(columnId) {
+    const list = allGroups[columnId]
+    await Promise.all(list.map((c) => updateClient(c.id, { boardHidden: true })))
+    setClearTarget(null)
+    showToast(`${list.length} לקוחות הוסרו מהלוח`, () => Promise.all(list.map((c) => updateClient(c.id, { boardHidden: false }))))
+  }
+
+  function messageClient(client) {
+    return {
+      id: client.id,
+      firstName: client.firstName || '',
+      fullName: getClientName(client),
+      gender: client.gender === 'male' ? 'male' : 'female',
+      includesAlbum: !!client.includesAlbum,
+    }
+  }
+
+  function openMessages(client, templateIds, label) {
+    navigate('/dashboard/messages', { state: { client: messageClient(client), focus: { templateIds, label } } })
+  }
+
+  function openPreShootMessage(client) {
+    const t = templates.find((x) => x.kind === PRE_SHOOT_KIND) || templates.find((x) => x.title?.includes('לפני צילום'))
+    openMessages(client, t ? [t.id] : [], 'הודעה לפני צילום')
+  }
+
+  // Guide messages matching the client's shoot type (e.g. "בת מצווה" → both bat mitzvah guides); all guides if none match
+  function openDressGuide(client) {
+    const type = (typeMap[client.photoshootTypeId] || '').trim()
+    const guideTemplates = templates.filter((t) => t.guideId)
+    const matchingGuideIds = type ? guides.filter((g) => g.name.includes(type)).map((g) => g.id) : []
+    const matching = guideTemplates.filter((t) => matchingGuideIds.includes(t.guideId))
+    openMessages(client, (matching.length ? matching : guideTemplates).map((t) => t.id), 'הנחיות לבוש')
+  }
+
+  function actionsFor(client) {
+    return {
+      onOpen: () => navigate(`/dashboard/clients/${client.id}`, { state: FROM_BOARD }),
+      onMove: (columnId) => move(client, columnId),
+      onRemove: () => removeFromBoard(client),
+      onCallbackDate: (date) => updateClient(client.id, { callbackDate: date || null }),
+      onPreShootSent: (sent) => updateClient(client.id, { preShootMessageSentAt: sent ? new Date() : null }),
+      onPreShootMessage: () => openPreShootMessage(client),
+      onDressGuide: () => openDressGuide(client),
+    }
+  }
+
+  function handleDragEnd({ active, over }) {
+    setActiveId(null)
+    if (!over) return
+    const client = clients.find((c) => c.id === active.id)
+    if (client) move(client, over.id)
+  }
+
+  function columnActions(columnId) {
+    if (columnId === 'new') {
+      return <IconButton label="לקוח חדש" onClick={() => setShowNew(true)}><Plus className="w-4 h-4" /></IconButton>
+    }
+    if (COLUMN_BY_ID[columnId].expires && allGroups[columnId].length > 0) {
+      return (
+        <IconButton label={`הסר את כל ״${COLUMN_BY_ID[columnId].title}״ מהלוח`} onClick={() => setClearTarget(columnId)}>
+          <EyeOff className="w-3.5 h-3.5" />
+        </IconButton>
+      )
+    }
+    return null
+  }
+
+  function renderColumn(columnId, compact = false) {
+    const column = COLUMN_BY_ID[columnId]
+    return (
+      <Column key={columnId} column={column} clients={groups[columnId]} actions={columnActions(columnId)} compact={compact}>
+        {groups[columnId].map((c) => (
+          <BoardTicket key={c.id} client={c} columnId={columnId} typeName={typeMap[c.photoshootTypeId]} now={now}
+            actions={actionsFor(c)} />
+        ))}
+      </Column>
+    )
+  }
+
+  if (loading) return <div className="text-center py-20 text-gray-400">טוען...</div>
+
+  return (
+    <div className="flex flex-col h-[calc(100vh-7.5rem)] min-h-[32rem]">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <h1 className="text-2xl font-semibold text-gray-900">לוח לקוחות</h1>
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="חיפוש בלוח..." aria-label="חיפוש בלוח"
+              className="w-56 border border-gray-200 rounded-lg ps-9 pe-8 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-300" />
+            {search && (
+              <IconButton label="נקה חיפוש" onClick={() => setSearch('')} className="absolute left-2 top-1/2 -translate-y-1/2">
+                <X className="w-4 h-4" />
+              </IconButton>
+            )}
+          </div>
+          <Button onClick={() => setShowNew(true)}><Plus className="w-4 h-4" /> לקוח חדש</Button>
+        </div>
+      </div>
+
+      <DndContext sensors={sensors} onDragStart={({ active }) => setActiveId(active.id)} onDragEnd={handleDragEnd}
+        onDragCancel={() => setActiveId(null)}
+        accessibility={{
+          screenReaderInstructions: { draggable: 'רווח להרמת הכרטיס, חיצים להזזה, רווח להנחה, Escape לביטול. Enter פותח את כרטיס הלקוח.' },
+        }}>
+        <div className="flex-1 min-h-0 overflow-x-auto pb-2">
+          <div className="flex gap-3 h-full w-max">
+            {BOARD_SLOTS.map((slot) => (
+              <div key={slot.join('-')} className="w-60 shrink-0 h-full flex flex-col gap-3">
+                {slot.length === 1 ? renderColumn(slot[0]) : slot.map((id) => renderColumn(id, true))}
+              </div>
+            ))}
+          </div>
+        </div>
+        <DragOverlay dropAnimation={null}>
+          {activeClient && (
+            <div className="w-[14.5rem]">
+              <TicketCard client={activeClient} columnId={columnOf(activeClient)} typeName={typeMap[activeClient.photoshootTypeId]} now={now} overlay />
+            </div>
+          )}
+        </DragOverlay>
+      </DndContext>
+
+      {toast && (
+        <div role="status" className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-4 bg-gray-900 text-white text-sm rounded-xl shadow-lg px-4 py-3"
+          style={{ marginBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+          <span>{toast.text}</span>
+          {toast.undo && (
+            <button type="button" className="font-medium text-amber-300 hover:text-amber-200"
+              onClick={() => { toast.undo(); setToast(null) }}>
+              בטל
+            </button>
+          )}
+        </div>
+      )}
+
+      <NewClientModal isOpen={showNew} onClose={() => setShowNew(false)} openAfterCreate={false} />
+
+      <ConfirmDialog
+        isOpen={!!clearTarget}
+        title="הסרה מהלוח"
+        message={clearTarget ? `להסיר את כל ${allGroups[clearTarget].length} הלקוחות מ״${COLUMN_BY_ID[clearTarget].title}״? הם לא יימחקו ויישארו במאגר הלקוחות.` : ''}
+        confirmLabel="הסר מהלוח"
+        onConfirm={() => clearColumn(clearTarget)}
+        onCancel={() => setClearTarget(null)}
+      />
+    </div>
+  )
+}
