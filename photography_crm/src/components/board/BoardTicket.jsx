@@ -228,7 +228,7 @@ export function TicketCard({ client, columnId, typeName, now = new Date(), actio
       )}
       {columnId === 'preshoot' && actions.onPreShootMessage && (
         // The message button and its "sent" mark sit together as one control
-        <div className={`flex items-stretch w-fit rounded-lg border text-[11px] ${client.preShootMessageSentAt ? 'border-green-200 bg-green-50/60' : 'border-gray-200'}`}>
+        <div className={`flex items-stretch w-fit max-w-full rounded-lg border text-[11px] ${client.preShootMessageSentAt ? 'border-green-200 bg-green-50/60' : 'border-gray-200'}`}>
           <button type="button" onPointerDown={stop} onClick={(e) => { e.stopPropagation(); actions.onPreShootMessage() }}
             className="inline-flex items-center gap-1 whitespace-nowrap font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-s-lg px-2 py-1">
             <MessageSquareText className="w-3.5 h-3.5" aria-hidden="true" /> הודעה לפני צילום
@@ -256,7 +256,8 @@ export default function BoardTicket({ client, columnId, typeName, now, actions, 
         listeners?.onKeyDown?.(e)
         if (e.key === 'Enter' && !e.defaultPrevented) actions.onOpen()
       }}
-      className="list-none rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 touch-manipulation">
+      // No text selection or iOS callout on a long press, so holding a ticket picks it up
+      className="list-none rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-400 touch-manipulation select-none [-webkit-touch-callout:none]">
       <TicketCard client={client} columnId={columnId} typeName={typeName} now={now} actions={actions} position={position} dragging={isDragging} />
     </li>
   )

@@ -33,7 +33,7 @@ export default function ProposalTemplate({ photoshootTypeName, packages }) {
       <div className="mt-10 pt-6 border-t border-gray-100 text-center space-y-1">
         <p className="text-sm font-medium text-gray-700">רויטל פרצלינה</p>
         <div className="text-xs text-gray-400 space-y-1">
-          <p>054-8788851 | rparzelina@gmail.com | @revital_photography</p>
+          <p><bdi dir="ltr">054-8788851</bdi> | <bdi dir="ltr">rparzelina@gmail.com</bdi> | <bdi dir="ltr">@revital_photography</bdi></p>
           <p>לפרטים נוספים ולתיאום — נשמח לשמוע מכם</p>
         </div>
       </div>

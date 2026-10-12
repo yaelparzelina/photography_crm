@@ -160,8 +160,8 @@ export default function ClientsDatabase() {
         </Button>
       </div>
 
-      <div className="flex gap-3 mb-4">
-        <div className="relative flex-1">
+      <div className="flex flex-wrap gap-3 mb-4">
+        <div className="relative flex-1 min-w-[12rem]">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             value={search} onChange={(e) => setSearch(e.target.value)}
@@ -177,8 +177,9 @@ export default function ClientsDatabase() {
           allLabel="כל הסטטוסים" presets={[IN_PROGRESS_PRESET]} className="w-48" />
       </div>
 
-      <div className={`${cardClass} overflow-hidden`}>
-        <table className="w-full text-sm">
+      {/* Wide table: on a phone it scrolls sideways inside its own box */}
+      <div className={`${cardClass} overflow-x-auto`}>
+        <table className="w-full min-w-[40rem] text-sm">
           <thead className="border-b border-gray-100 bg-gray-50">
             <tr>
               <th className={thClass} onClick={() => handleSort('firstName')}>שם <SortIcon field="firstName" sortField={sortField} sortDir={sortDir} /></th>
@@ -196,11 +197,11 @@ export default function ClientsDatabase() {
             {rows.map((c) => (
               <tr key={c.id} onClick={() => navigate(`/dashboard/clients/${c.id}`, { state: { from: '/dashboard/clients', fromLabel: 'מאגר הלקוחות' } })}
                 className="cursor-pointer hover:bg-gray-50 transition-colors">
-                <td className="px-4 py-3 font-medium text-gray-900">{getClientName(c) || '—'}</td>
+                <td className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">{getClientName(c) || '—'}</td>
                 <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                   <StatusSelect status={c.status} onUpdate={(val) => updateClient(c.id, statusChanges(val))} />
                 </td>
-                <td className="px-4 py-3 text-gray-600">{typeMap[c.photoshootTypeId] || '—'}</td>
+                <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{typeMap[c.photoshootTypeId] || '—'}</td>
                 <td className="px-4 py-3 text-gray-600">{c.shootDate ? formatDate(c.shootDate) : '—'}</td>
                 <td className="px-4 py-3 text-center">{c.paidAdvance ? '✓' : '—'}</td>
                 <td className="px-4 py-3 text-center">{c.agreementSigned ? '✓' : '—'}</td>

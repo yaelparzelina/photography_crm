@@ -127,6 +127,17 @@ describe('DressGuideEditor', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/dashboard/dress-guides')
   })
 
+  it('on a phone, switches between the form and the preview', async () => {
+    mocks.loadGuide.mockResolvedValue({ guide: bat, photos: [] })
+    renderAt('/dashboard/dress-guides/bat-mitzvah', <DressGuideEditor />, '/dashboard/dress-guides/:slug')
+    await screen.findByDisplayValue('מזל טוב!')
+    const preview = screen.getByTestId('guide-preview').parentElement
+    expect(preview.className).toContain('hidden lg:block')
+    fireEvent.click(screen.getByRole('radio', { name: 'תצוגה מקדימה' }))
+    expect(preview.className).not.toContain('hidden')
+    expect(screen.getByText('פרטי הדף').closest('.space-y-4').className).toContain('hidden lg:block')
+  })
+
   it('a colour name suggests its swatch', async () => {
     mocks.loadGuide.mockResolvedValue({ guide: bat, photos: [] })
     renderAt('/dashboard/dress-guides/bat-mitzvah', <DressGuideEditor />, '/dashboard/dress-guides/:slug')

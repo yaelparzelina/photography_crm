@@ -316,12 +316,12 @@ export default function ClientTicket() {
 
   return (
     <div className="max-w-3xl">
-      <Button variant="link" onClick={handleNavigateBack} className="mb-6">
+      <Button variant="link" onClick={handleNavigateBack} className="mb-4 sm:mb-6">
         <ArrowRight className="w-4 h-4" /> {backLabel}
       </Button>
 
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900">{getClientName(client) || 'לקוח חדש'}</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+        <h1 className="text-2xl font-semibold text-gray-900 min-w-0 break-words">{getClientName(client) || 'לקוח חדש'}</h1>
         <div className="flex items-center gap-3">
           <Button variant="secondary" onClick={openMessages}>
             <MessageCircle className="w-4 h-4" /> הודעות ללקוח
@@ -510,18 +510,17 @@ export default function ClientTicket() {
         )}
       </Card>
 
-      {/* Save + Delete + Back */}
-      <div className="flex items-center justify-between mt-4">
-        <div className="flex items-center gap-2">
-          <Button variant="danger" onClick={() => setShowDelete(true)}>
-            <Trash2 className="w-4 h-4" /> מחק לקוח
-          </Button>
-          <Button variant="secondary" onClick={handleNavigateBack}>
-            <ArrowRight className="w-4 h-4" /> {backLabel}
-          </Button>
-        </div>
-        <Button size="lg" onClick={handleSave} disabled={saving}>
+      {/* Save + Back + Delete. On a phone: a bar pinned to the bottom of the screen, save first and widest */}
+      <div className="sticky bottom-0 z-20 -mx-4 px-4 mt-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-gray-50/95 backdrop-blur border-t border-gray-200
+        sm:static sm:mx-0 sm:px-0 sm:pt-0 sm:pb-0 sm:bg-transparent sm:backdrop-blur-none sm:border-0 flex items-center gap-2">
+        <Button size="lg" onClick={handleSave} disabled={saving} className="flex-1 sm:flex-none sm:order-last sm:ms-auto">
           {saving ? 'שומר...' : 'שמור שינויים'}
+        </Button>
+        <Button variant="secondary" size="lg" onClick={handleNavigateBack} aria-label={backLabel} className="sm:!px-4 sm:!py-2">
+          <ArrowRight className="w-4 h-4" /> <span className="sm:hidden">חזרה</span><span className="hidden sm:inline">{backLabel}</span>
+        </Button>
+        <Button variant="danger" size="lg" onClick={() => setShowDelete(true)} aria-label="מחק לקוח" className="sm:order-first sm:!px-4 sm:!py-2">
+          <Trash2 className="w-4 h-4" /> <span className="hidden sm:inline">מחק לקוח</span>
         </Button>
       </div>
 

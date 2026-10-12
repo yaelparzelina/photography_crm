@@ -105,7 +105,7 @@ export default function AgreementTemplate({ link, date }) {
         <p className="text-sm text-gray-600 mb-4">מצפה ומחכה ליום הצילומים :)</p>
         <p className="text-xl font-medium text-gray-900">רויטל פרצלינה</p>
         <div className="mt-4 text-xs text-gray-400 space-y-0.5">
-          <p>054-8788851 | rparzelina@gmail.com | @revital_photography</p>
+          <p><bdi dir="ltr">054-8788851</bdi> | <bdi dir="ltr">rparzelina@gmail.com</bdi> | <bdi dir="ltr">@revital_photography</bdi></p>
         </div>
       </div>
     </div>

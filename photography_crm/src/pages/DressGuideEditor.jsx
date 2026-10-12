@@ -116,6 +116,7 @@ export default function DressGuideEditor() {
   const [saveError, setSaveError] = useState('')
   const [confirmLeave, setConfirmLeave] = useState(false)
   const [notFound, setNotFound] = useState(false)
+  const [mobileView, setMobileView] = useState('edit')
 
   useEffect(() => {
     if (isNew) return
@@ -196,8 +197,14 @@ export default function DressGuideEditor() {
       </div>
       {saveError && <p className="text-red-600 text-sm mb-4">{saveError}</p>}
 
+      {/* Phone/tablet: the form and the preview don't fit side by side, so switch between them */}
+      <div className="lg:hidden mb-4">
+        <Segmented label="תצוגה" options={[{ value: 'edit', label: 'עריכה' }, { value: 'preview', label: 'תצוגה מקדימה' }]}
+          value={mobileView} onChange={setMobileView} />
+      </div>
+
       <div className="grid gap-6 lg:grid-cols-2 items-start">
-        <div className="space-y-4">
+        <div className={`space-y-4 ${mobileView === 'preview' ? 'hidden lg:block' : ''}`}>
           <Card title="פרטי הדף">
             <div className="space-y-4">
               <Field label="שם הדף *" error={errors.name}>
@@ -278,7 +285,7 @@ export default function DressGuideEditor() {
           </Card>
         </div>
 
-        <div className="lg:sticky lg:top-20">
+        <div className={`lg:sticky lg:top-20 ${mobileView === 'edit' ? 'hidden lg:block' : ''}`}>
           <p className="text-xs font-medium text-gray-500 mb-2">תצוגה מקדימה</p>
           <div className="rounded-2xl border border-gray-200 overflow-y-auto lg:max-h-[calc(100vh-7rem)] shadow-sm" data-testid="guide-preview">
             <DressGuideView guide={form} photos={photos} />

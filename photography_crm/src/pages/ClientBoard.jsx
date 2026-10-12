@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  DndContext, DragOverlay, PointerSensor, TouchSensor, KeyboardSensor, useSensor, useSensors, useDroppable,
+  DndContext, DragOverlay, MouseSensor, TouchSensor, KeyboardSensor, useSensor, useSensors, useDroppable,
   pointerWithin, closestCenter, closestCorners,
 } from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy, sortableKeyboardCoordinates } from '@dnd-kit/sortable'
@@ -92,8 +92,9 @@ export default function ClientBoard() {
   const activeClient = activeId ? clients.find((c) => c.id === activeId) : null
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 220, tolerance: 6 } }),
+    // Mouse: drag after moving a few pixels. Touch: press and hold, then drag (a quick swipe still scrolls the board).
+    useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 8 } }),
     // Space picks up / drops a ticket; Enter opens the client card
     useSensor(KeyboardSensor, { keyboardCodes: { start: ['Space'], cancel: ['Escape'], end: ['Space'] }, coordinateGetter: sortableKeyboardCoordinates }),
   )
@@ -233,17 +234,28 @@ export default function ClientBoard() {
     )
   }
 
+  function handleDragStart({ active }) {
+    setActiveId(active.id)
+    navigator.vibrate?.(15) // a short buzz on phones that support it, when a held ticket lifts
+  }
+
+  // Phone: jump to a column from the strip of column names
+  function jumpTo(columnId) {
+    const slot = BOARD_SLOTS.find((s) => s.includes(columnId))
+    document.getElementById(`board-slot-${slot[0]}`)?.scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' })
+  }
+
   if (loading) return <div className="text-center py-20 text-gray-400">טוען...</div>
 
   return (
-    <div className="flex flex-col h-[calc(100vh-7.5rem)] min-h-[32rem]">
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+    <div className="flex flex-col h-[calc(100dvh-6.5rem)] sm:h-[calc(100dvh-7.5rem)] min-h-[28rem]">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-3 sm:mb-4">
         <h1 className="text-2xl font-semibold text-gray-900">לוח לקוחות</h1>
-        <div className="flex items-center gap-2">
-          <div className="relative">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="relative flex-1 sm:flex-none">
             <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="חיפוש בלוח..." aria-label="חיפוש בלוח"
-              className="w-56 border border-gray-200 rounded-lg ps-9 pe-8 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-300" />
+              className="w-full sm:w-56 border border-gray-200 rounded-lg ps-9 pe-8 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-gray-300" />
             {search && (
               <IconButton label="נקה חיפוש" onClick={() => setSearch('')} className="absolute left-2 top-1/2 -translate-y-1/2">
                 <X className="w-4 h-4" />
@@ -254,16 +266,29 @@ export default function ClientBoard() {
         </div>
       </div>
 
-      <DndContext sensors={sensors} collisionDetection={boardCollision} onDragStart={({ active }) => setActiveId(active.id)} onDragEnd={handleDragEnd}
+      {/* Phone: column names with counts; tap to jump */}
+      <nav aria-label="מעבר לעמודה" className="sm:hidden -mx-3 px-3 mb-3 flex gap-1.5 overflow-x-auto [scrollbar-width:none]">
+        {BOARD_SLOTS.flat().map((id) => (
+          <button key={id} type="button" onClick={() => jumpTo(id)}
+            className="shrink-0 inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 active:bg-gray-100">
+            {COLUMN_BY_ID[id].title}
+            <span className="text-gray-400 tabular-nums">{groups[id].length}</span>
+          </button>
+        ))}
+      </nav>
+
+      <DndContext sensors={sensors} collisionDetection={boardCollision} onDragStart={handleDragStart} onDragEnd={handleDragEnd}
         onDragCancel={() => setActiveId(null)}
         accessibility={{
           screenReaderInstructions: { draggable: 'רווח להרמת הכרטיס, חיצים להזזה, רווח להנחה, Escape לביטול. Enter פותח את כרטיס הלקוח.' },
         }}>
-        {/* Columns share the width; below 13rem each, the board scrolls sideways */}
-        <div className="flex-1 min-h-0 overflow-x-auto overflow-y-hidden">
+        {/* Columns share the width; below 13rem each, the board scrolls sideways.
+            Phone: one wide column at a time (with a peek at the next), snapping into place while not dragging. */}
+        <div className={`flex-1 min-h-0 overflow-x-auto overflow-y-hidden -mx-3 px-3 sm:mx-0 sm:px-0 scroll-px-3 ${activeId ? '' : 'snap-x snap-mandatory sm:snap-none'}`}>
           <div className="flex gap-3 h-full">
             {BOARD_SLOTS.map((slot) => (
-              <div key={slot.join('-')} className="flex-1 min-w-[13rem] h-full flex flex-col gap-3">
+              <div key={slot.join('-')} id={`board-slot-${slot[0]}`}
+                className="flex-none w-[82vw] snap-start sm:flex-1 sm:w-auto sm:min-w-[13rem] h-full flex flex-col gap-3">
                 {slot.map((id) => renderColumn(id))}
               </div>
             ))}

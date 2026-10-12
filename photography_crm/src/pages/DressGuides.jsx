@@ -31,15 +31,16 @@ export default function DressGuides() {
         <div className="space-y-4">
           {guides.map((g) => (
             <section key={g.id} className={`${cardClass} px-5 py-4`}>
-              <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
-                <div>
+              {/* Name wraps when needed; the buttons always stay at the top, beside it */}
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div className="min-w-0 flex-1">
                   <h2 className="text-base font-semibold text-gray-900">{g.name || 'ללא שם'}</h2>
                   <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1.5">
                     {g.title}
                     {g.photoIds.length > 0 && <><span>·</span><ImageIcon className="w-3 h-3" /> {g.photoIds.length} תמונות</>}
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                   <Button variant="secondary" size="sm" onClick={() => navigate(`/dashboard/dress-guides/${g.id}`)}>
                     <Pencil className="w-3.5 h-3.5" /> עריכה
                   </Button>

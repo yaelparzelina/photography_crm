@@ -18,6 +18,20 @@ select:not([multiple]) {
   padding-inline-end: 2.25rem;
 }
 
+/* Grid cells and form controls may shrink to the screen width (they keep a content-based minimum otherwise) */
+.grid > * { min-width: 0; }
+input, select, textarea { min-width: 0; }
+
+/* Phones: iPhone zooms the page in when a field's text is under 16px, so fields use 16px there */
+@media (max-width: 639px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="color"]), select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Pages never scroll sideways; only wide tables and the board scroll inside their own box */
+body { overflow-x: clip; }
+
 /* Date inputs: align text/placeholder near the calendar icon on the right */
 input[type="date"] {
   text-align: end;

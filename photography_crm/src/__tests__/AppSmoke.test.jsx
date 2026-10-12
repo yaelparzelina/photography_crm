@@ -81,6 +81,19 @@ describe('App smoke (logged in)', () => {
     expect(screen.getByRole('region', { name: 'לא סגר' })).toBeInTheDocument()
   })
 
+  it('phone menu opens with every page and closes after choosing one', () => {
+    renderAt('/dashboard')
+    expect(document.getElementById('mobile-menu')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'פתיחת התפריט' }))
+    const menu = document.getElementById('mobile-menu')
+    for (const label of ['לוח לקוחות', 'מאגר לקוחות', 'הודעות ללקוח', 'רשימת תפוצה', 'הנחיות לבוש', 'הגדרות', 'התנתקות']) {
+      expect(within(menu).getByText(label)).toBeInTheDocument()
+    }
+    fireEvent.click(within(menu).getByText('מאגר לקוחות'))
+    expect(screen.getByRole('heading', { name: 'מאגר לקוחות' })).toBeInTheDocument()
+    expect(document.getElementById('mobile-menu')).toBeNull()
+  })
+
   it('clients database renders clients and the in-progress filter', () => {
     renderAt('/dashboard/clients')
     expect(screen.getByRole('heading', { name: 'מאגר לקוחות' })).toBeInTheDocument()
