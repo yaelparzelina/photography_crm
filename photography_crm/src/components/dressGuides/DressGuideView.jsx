@@ -129,7 +129,7 @@ export default function DressGuideView({ guide, photos = [] }) {
         <header className="text-center space-y-3 pb-2">
           <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Revital Parzelina Photography"
             className="w-56 sm:w-64 mx-auto mb-6" />
-          {guide.title && <h1 className={`${t.heading} text-3xl sm:text-4xl leading-tight`}>{guide.title}</h1>}
+          {guide.title && <h1 className={`${t.heading} !font-semibold text-3xl sm:text-4xl leading-tight`}>{guide.title}</h1>}
           {guide.subtitle && <p className={`${t.accent} font-display font-light text-2xl`}>{guide.subtitle}</p>}
           {guide.intro && <p className="max-w-xl mx-auto leading-relaxed text-[17px] whitespace-pre-line pt-2">{guide.intro}</p>}
         </header>
