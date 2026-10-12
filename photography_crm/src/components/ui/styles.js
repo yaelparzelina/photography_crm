@@ -11,4 +11,10 @@ export const cardClass = 'bg-white rounded-2xl border border-gray-100 shadow-sm'
 // Nested item inside a card (document boxes, settings list rows)
 export const itemClass = 'bg-white border border-gray-100 rounded-xl'
 
+// Big tables scroll inside a box no taller than the screen (and sideways when wide),
+// so the column names in the header can stay pinned at the top while scrolling down.
+export const tableBoxClass = `${cardClass} overflow-auto max-h-[calc(100dvh-8rem)]`
+// Header cell that stays visible; the inset shadow replaces the border that sticky cells lose
+export const stickyThClass = 'sticky top-0 z-10 bg-gray-50 shadow-[inset_0_-1px_0_#f3f4f6]'
+
 export const backdropClass = 'absolute inset-0 bg-black/40 backdrop-blur-sm'

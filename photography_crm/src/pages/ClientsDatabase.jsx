@@ -8,7 +8,7 @@ import NewClientModal from '../components/NewClientModal'
 import MultiSelect from '../components/ui/MultiSelect'
 import Button from '../components/ui/Button'
 import IconButton from '../components/ui/IconButton'
-import { cardClass } from '../components/ui/styles'
+import { tableBoxClass, stickyThClass } from '../components/ui/styles'
 import { formatDate } from '../utils/dateUtils'
 import { STATUS_CONFIG, STATUS_OPTIONS, IN_PROGRESS_PRESET } from '../utils/statusConfig'
 import { getClientName } from '../utils/clientUtils'
@@ -68,7 +68,7 @@ function StatusSelect({ status, onUpdate }) {
   return (
     <>
       <button ref={btnRef} onClick={handleOpen}
-        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${config.color}`}
+        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap ${config.color}`}
       >
         {config.label}
         <ChevronDown className="w-3 h-3 opacity-70" />
@@ -98,7 +98,7 @@ function SortIcon({ field, sortField, sortDir }) {
   return sortDir === 'asc' ? <ChevronUp className="w-3 h-3 inline" /> : <ChevronDown className="w-3 h-3 inline" />
 }
 
-const thClass = 'px-4 py-3 text-xs font-medium text-gray-500 cursor-pointer hover:text-gray-900 select-none'
+const thClass = `${stickyThClass} px-4 py-3 text-xs font-medium text-gray-500 cursor-pointer hover:text-gray-900 select-none`
 
 // All clients (including the ones that left the board), as a searchable, sortable list
 export default function ClientsDatabase() {
@@ -178,9 +178,9 @@ export default function ClientsDatabase() {
       </div>
 
       {/* Wide table: on a phone it scrolls sideways inside its own box */}
-      <div className={`${cardClass} overflow-x-auto`}>
+      <div className={tableBoxClass}>
         <table className="w-full min-w-[40rem] text-sm">
-          <thead className="border-b border-gray-100 bg-gray-50">
+          <thead>
             <tr>
               <th className={thClass} onClick={() => handleSort('firstName')}>שם <SortIcon field="firstName" sortField={sortField} sortDir={sortDir} /></th>
               <th className={thClass}>סטטוס</th>

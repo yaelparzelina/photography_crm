@@ -13,7 +13,7 @@ import DateRangeFilter from '../components/ui/DateRangeFilter'
 import CopyLink from '../components/ui/CopyLink'
 import StatusBadge from '../components/ui/StatusBadge'
 import ConfirmDialog from '../components/ui/ConfirmDialog'
-import { inputClass, cardClass } from '../components/ui/styles'
+import { inputClass, cardClass, tableBoxClass, stickyThClass } from '../components/ui/styles'
 import { STATUS_OPTIONS, IN_PROGRESS_PRESET } from '../utils/statusConfig'
 import { getClientName } from '../utils/clientUtils'
 import { formatDate, toInputDate } from '../utils/dateUtils'
@@ -31,7 +31,7 @@ const NEWSLETTER_FILTERS = [
   { value: 'all', label: 'הכל' },
 ]
 
-const thClass = 'px-3 py-3 text-xs font-medium text-gray-500 text-start whitespace-nowrap'
+const thClass = `${stickyThClass} px-3 py-3 text-xs font-medium text-gray-500 text-start whitespace-nowrap`
 const tdClass = 'px-3 py-2.5 text-sm text-gray-700 whitespace-nowrap'
 
 function NewsletterBadge({ client }) {
@@ -343,9 +343,9 @@ export default function MailingList() {
         )}
       </div>
 
-      <div className={`${cardClass} overflow-x-auto`}>
+      <div className={tableBoxClass}>
         <table className="w-full">
-          <thead className="border-b border-gray-100 bg-gray-50">
+          <thead>
             <tr>
               <th className={thClass}>
                 <input type="checkbox" aria-label="בחר את כל הנמענים המוצגים" className="w-4 h-4 accent-gray-900"
