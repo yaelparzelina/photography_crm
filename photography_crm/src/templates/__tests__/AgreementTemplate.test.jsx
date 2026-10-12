@@ -66,6 +66,11 @@ describe('AgreementTemplate', () => {
     expect(screen.getByText(/עד 15 ימי עסקים מיום הצילומים/)).toBeInTheDocument()
   })
 
+  it('the album is delivered within 7 business days of the print approval', () => {
+    render(<AgreementTemplate link={sampleLink} />)
+    expect(screen.getByText(/האלבום יימסר עם שליח לבית הלקוח, תוך 7 ימי עסקים, מיום אישור הדפסה/)).toBeInTheDocument()
+  })
+
   it('shows album line when includesAlbum=true even without size and pages', () => {
     render(<AgreementTemplate link={{ ...sampleLink, albumSize: '', albumPages: '' }} />)
     expect(screen.getByText(/✓ אלבום מעוצב ומודפס/)).toBeInTheDocument()
