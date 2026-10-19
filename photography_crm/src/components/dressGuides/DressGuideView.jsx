@@ -29,20 +29,44 @@ function Section({ title, children }) {
   )
 }
 
-function Palette({ text, palette }) {
+function Swatches({ colors }) {
+  return (
+    <ul className="flex flex-wrap justify-center gap-x-5 gap-y-4">
+      {colors.map((c, i) => (
+        <li key={`${c.name}-${i}`} className="flex flex-col items-center gap-2 w-16">
+          <span className="w-12 h-12 rounded-full border border-black/10 shadow-inner"
+            style={{ backgroundColor: c.color || '#E8D9C5' }} aria-hidden="true" />
+          <span className="text-xs text-center leading-tight">{c.name}</span>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+// One untitled group shows the colours on their own. Several groups (or a titled one) are shown as
+// separate combinations, each in its own box, so it's clear which colours go together.
+function Palette({ text, groups }) {
+  const separate = groups.length > 1 || !!groups[0]?.title
   return (
     <Section title={SECTION_TITLES.palette}>
       {text && <p className="text-center leading-relaxed mb-6 whitespace-pre-line">{text}</p>}
-      {palette.length > 0 && (
-        <ul className="flex flex-wrap justify-center gap-x-5 gap-y-4">
-          {palette.map((c, i) => (
-            <li key={`${c.name}-${i}`} className="flex flex-col items-center gap-2 w-16">
-              <span className="w-12 h-12 rounded-full border border-black/10 shadow-inner"
-                style={{ backgroundColor: c.color || '#E8D9C5' }} aria-hidden="true" />
-              <span className="text-xs text-center leading-tight">{c.name}</span>
-            </li>
+      {!separate && groups[0] && <Swatches colors={groups[0].colors} />}
+      {separate && (
+        <div className={`grid gap-4 ${groups.length > 1 ? 'sm:grid-cols-2' : ''}`}>
+          {groups.map((g, i) => (
+            <div key={i} className="rounded-2xl bg-[#FBF7F2] border border-[#F0E6D8] px-4 pt-4 pb-5" role="group"
+              aria-label={g.title || `שילוב ${i + 1}`}>
+              <div className="flex justify-center mb-4" aria-hidden="true">
+                {g.colors.map((c, j) => (
+                  <span key={j} className="w-7 h-7 rounded-full border-2 border-[#FBF7F2] -ms-2 first:ms-0"
+                    style={{ backgroundColor: c.color || '#E8D9C5' }} />
+                ))}
+              </div>
+              <h3 className={`${t.heading} text-center text-lg mb-4`}>{g.title || `שילוב ${i + 1}`}</h3>
+              <Swatches colors={g.colors} />
+            </div>
           ))}
-        </ul>
+        </div>
       )}
     </Section>
   )
@@ -122,7 +146,10 @@ function Photos({ photos }) {
 export default function DressGuideView({ guide, photos = [] }) {
   const tips = guide.tips.filter((x) => x.text?.trim())
   const outfits = guide.outfits.filter((x) => x?.trim())
-  const palette = guide.palette.filter((x) => x.name?.trim())
+  // Only named colours are shown, and groups left without colours are skipped
+  const groups = guide.paletteGroups
+    .map((g) => ({ ...g, title: g.title?.trim() || '', colors: g.colors.filter((x) => x.name?.trim()) }))
+    .filter((g) => g.colors.length)
   return (
     <div className={`${t.page} min-h-full px-4 py-10 sm:py-14`} dir="rtl">
       <div className="max-w-2xl mx-auto space-y-6">
@@ -134,7 +161,7 @@ export default function DressGuideView({ guide, photos = [] }) {
           {guide.intro && <p className="max-w-xl mx-auto leading-relaxed text-[17px] whitespace-pre-line pt-2">{guide.intro}</p>}
         </header>
 
-        {(guide.paletteText || palette.length > 0) && <Palette text={guide.paletteText} palette={palette} />}
+        {(guide.paletteText || groups.length > 0) && <Palette text={guide.paletteText} groups={groups} />}
         {tips.length > 0 && <Tips tips={tips} />}
         {outfits.length > 0 && <Outfits outfits={outfits} />}
         {guide.note && <p className="text-center text-sm italic leading-relaxed whitespace-pre-line px-4">{guide.note}</p>}

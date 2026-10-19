@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { ArrowRight, Plus, Trash2, ChevronUp, ChevronDown, ChevronRight, ChevronLeft, Upload, ExternalLink } from 'lucide-react'
 import { loadGuide, saveGuide } from '../hooks/useDressGuides'
-import { emptyGuide, suggestColor, guideMessageTitle, guidePreviewHref, SECTION_TITLES } from '../utils/dressGuides'
+import { emptyGuide, emptyColorGroup, suggestColor, guideMessageTitle, guidePreviewHref, SECTION_TITLES } from '../utils/dressGuides'
 import { resizeImage } from '../utils/imageResize'
 import DressGuideView from '../components/dressGuides/DressGuideView'
 import Button from '../components/ui/Button'
@@ -45,6 +45,66 @@ function ListEditor({ items, onChange, newItem, addLabel, itemLabel, children })
       <Button variant="link" size="sm" onClick={() => onChange([...items, newItem()])}>
         <Plus className="w-3.5 h-3.5" /> {addLabel}
       </Button>
+    </div>
+  )
+}
+
+// Colour combinations: each group has an optional name and its own colours.
+// With a single group the labels stay simple; with several, each label says which combination it belongs to.
+function ColorGroupsEditor({ groups, onChange, updateSwatch }) {
+  const many = groups.length > 1
+  const setGroup = (gi, next) => onChange(groups.map((g, j) => (j === gi ? next : g)))
+  // Removing the last group leaves an empty one, so there is always somewhere to add colours
+  const removeGroup = (gi) => onChange(groups.length > 1 ? groups.filter((_, j) => j !== gi) : [emptyColorGroup()])
+
+  return (
+    <div className="space-y-3">
+      {groups.map((g, gi) => {
+        const groupLabel = `שילוב ${gi + 1}`
+        const suffix = many ? ` ב${groupLabel}` : ''
+        return (
+          <div key={gi} role="group" aria-label={g.title || groupLabel}
+            className={many ? 'rounded-xl border border-gray-200 bg-gray-50/60 p-3 space-y-3' : 'space-y-3'}>
+            <div className="flex items-end gap-2">
+              <Field label={many ? `שם ${groupLabel}` : 'שם השילוב (לא חובה)'} className="flex-1">
+                <input className={inputClass()} value={g.title} aria-label={`שם ${groupLabel}`}
+                  placeholder="למשל: גווני אדמה" onChange={(e) => setGroup(gi, { ...g, title: e.target.value })} />
+              </Field>
+              {many && (
+                <div className="flex items-center pb-1.5">
+                  <IconButton label={`הזז למעלה: ${groupLabel}`} disabled={gi === 0} onClick={() => onChange(move(groups, gi, -1))}>
+                    <ChevronUp className="w-4 h-4" />
+                  </IconButton>
+                  <IconButton label={`הזז למטה: ${groupLabel}`} disabled={gi === groups.length - 1} onClick={() => onChange(move(groups, gi, 1))}>
+                    <ChevronDown className="w-4 h-4" />
+                  </IconButton>
+                  <IconButton label={`הסר ${groupLabel}`} variant="danger" onClick={() => removeGroup(gi)}>
+                    <Trash2 className="w-4 h-4" />
+                  </IconButton>
+                </div>
+              )}
+            </div>
+            <ListEditor items={g.colors} onChange={(colors) => setGroup(gi, { ...g, colors })}
+              newItem={() => ({ name: '', color: '' })} addLabel="הוספת צבע" itemLabel={`צבע${suffix}`}>
+              {(c, update, i) => (
+                <div className="flex items-center gap-2">
+                  <input type="color" value={c.color || '#E8D9C5'} aria-label={`גוון לצבע ${i + 1}${suffix}`}
+                    onChange={(e) => update({ ...c, color: e.target.value })}
+                    className="w-10 h-10 shrink-0 rounded-lg border border-gray-200 bg-white p-1 cursor-pointer" />
+                  <input className={inputClass()} value={c.name} aria-label={`שם צבע ${i + 1}${suffix}`} placeholder="למשל: חיטה"
+                    onChange={(e) => update(updateSwatch(c, { ...c, name: e.target.value }))} />
+                </div>
+              )}
+            </ListEditor>
+          </div>
+        )
+      })}
+      <Button variant="secondary" size="sm" onClick={() => onChange([...groups, emptyColorGroup()])}>
+        <Plus className="w-3.5 h-3.5" /> הוספת שילוב צבעים
+      </Button>
+      <p className="text-xs text-gray-400">
+        כל שילוב מוצג בדף בנפרד, כדי שהלקוחות יבחרו צבעים מתוך שילוב אחד. שילוב יחיד בלי שם מוצג כרשימת צבעים רגילה.
+      </p>
     </div>
   )
 }
@@ -244,18 +304,7 @@ export default function DressGuideEditor() {
             <Field label="טקסט מעל הצבעים" className="mb-4">
               <textarea rows={2} className={textareaClass} {...bind('paletteText')} />
             </Field>
-            <ListEditor items={form.palette} onChange={set('palette')} newItem={() => ({ name: '', color: '' })}
-              addLabel="הוספת צבע" itemLabel="צבע">
-              {(c, update, i) => (
-                <div className="flex items-center gap-2">
-                  <input type="color" value={c.color || '#E8D9C5'} aria-label={`גוון לצבע ${i + 1}`}
-                    onChange={(e) => update({ ...c, color: e.target.value })}
-                    className="w-10 h-10 shrink-0 rounded-lg border border-gray-200 bg-white p-1 cursor-pointer" />
-                  <input className={inputClass()} value={c.name} aria-label={`שם צבע ${i + 1}`} placeholder="למשל: חיטה"
-                    onChange={(e) => update(updateSwatch(c, { ...c, name: e.target.value }))} />
-                </div>
-              )}
-            </ListEditor>
+            <ColorGroupsEditor groups={form.paletteGroups} onChange={set('paletteGroups')} updateSwatch={updateSwatch} />
           </Card>
 
           <Card title={SECTION_TITLES.tips}>

@@ -79,16 +79,26 @@ export const SECTION_TITLES = {
 export function emptyGuide() {
   return {
     name: '', title: '', subtitle: '', intro: '',
-    paletteText: '', palette: [], tips: [], outfits: [],
+    paletteText: '', paletteGroups: [emptyColorGroup()], tips: [], outfits: [],
     note: '', closing: DEFAULT_CLOSING, signoff: '', photoIds: [],
   }
 }
 
-// Fills in fields missing from older or partial documents
+// Colours are grouped into combinations that go together; each group has an optional title
+export function emptyColorGroup() {
+  return { title: '', colors: [] }
+}
+
+// Fills in fields missing from older or partial documents.
+// Pages from before colour groups kept one flat `palette` list: it becomes a single group.
 export function normalizeGuide(data) {
-  const base = emptyGuide()
-  const out = { ...base, ...data }
-  for (const k of ['palette', 'tips', 'outfits', 'photoIds']) if (!Array.isArray(out[k])) out[k] = []
+  const { palette, ...rest } = data || {}
+  const out = { ...emptyGuide(), ...rest }
+  for (const k of ['tips', 'outfits', 'photoIds']) if (!Array.isArray(out[k])) out[k] = []
+  if (!Array.isArray(rest.paletteGroups)) {
+    out.paletteGroups = [{ title: '', colors: Array.isArray(palette) ? palette : [] }]
+  }
+  out.paletteGroups = out.paletteGroups.map((g) => ({ title: g?.title || '', colors: Array.isArray(g?.colors) ? g.colors : [] }))
   return out
 }
 

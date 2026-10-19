@@ -39,7 +39,19 @@ describe('dress guide helpers', () => {
   })
 
   it('normalizeGuide fills in missing lists', () => {
-    expect(normalizeGuide({ name: 'x', palette: null })).toMatchObject({ name: 'x', palette: [], tips: [], outfits: [], photoIds: [] })
+    expect(normalizeGuide({ name: 'x', palette: null })).toMatchObject({
+      name: 'x', paletteGroups: [{ title: '', colors: [] }], tips: [], outfits: [], photoIds: [],
+    })
+  })
+
+  it('pages from before colour groups keep all their colours in one untitled group', () => {
+    const colors = [{ name: 'חיטה', color: '#D8BF94' }, { name: 'חמרה', color: '#B4593B' }]
+    const g = normalizeGuide({ name: 'x', palette: colors })
+    expect(g.paletteGroups).toEqual([{ title: '', colors }])
+    expect(g.palette).toBeUndefined()
+    // pages saved with groups keep them as they are
+    const groups = [{ title: 'אדמה', colors }, { title: 'ים', colors: [] }]
+    expect(normalizeGuide({ paletteGroups: groups, palette: colors }).paletteGroups).toEqual(groups)
   })
 
   it('new slugs are 8 url-safe characters', () => {

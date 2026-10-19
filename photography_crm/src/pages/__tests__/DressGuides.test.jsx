@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import { vi, describe, it, expect, beforeEach } from 'vitest'
 
@@ -90,14 +90,14 @@ describe('Duplicating a guide', () => {
     expect(mocks.loadGuide).toHaveBeenCalledWith('family')
     expect(screen.getByRole('heading', { name: 'שכפול דף הנחיות' })).toBeInTheDocument()
     expect(screen.getByDisplayValue('הנחיות לבוש לצילומי משפחה')).toBeInTheDocument()
-    expect(screen.getByLabelText('שם צבע 1')).toHaveValue(family.palette[0].name)
+    expect(screen.getByLabelText('שם צבע 1')).toHaveValue(family.paletteGroups[0].colors[0].name)
     expect(screen.getByAltText('תמונה 2')).toHaveAttribute('src', photos[1].src)
 
     fireEvent.click(screen.getByText('שמור'))
     await waitFor(() => expect(mocks.saveGuide).toHaveBeenCalled())
     const arg = mocks.saveGuide.mock.calls[0][0]
     expect(arg).toMatchObject({ slug: null, previous: null, previousPhotoIds: [] })
-    expect(arg.form).toMatchObject({ name: 'צילומי משפחה (עותק)', palette: family.palette, tips: family.tips })
+    expect(arg.form).toMatchObject({ name: 'צילומי משפחה (עותק)', paletteGroups: family.paletteGroups, tips: family.tips })
     expect(arg.form.messageTemplateId).toBeUndefined()
     expect(arg.photos.map((p) => [p.src, p.isNew])).toEqual([[photos[0].src, true], [photos[1].src, true]])
   })
@@ -127,6 +127,30 @@ describe('DressGuidePage (public)', () => {
     expect(screen.getByText('מחכה ומתרגשת ❤️')).toBeInTheDocument()
   })
 
+  it('a single untitled group shows plain swatches; several groups show as separate combinations', async () => {
+    mocks.loadGuide.mockResolvedValue({ guide: bat, photos: [] })
+    const { unmount } = renderAt('/dress/bat-mitzvah', <DressGuidePage />, '/dress/:slug')
+    expect(await screen.findByText('ירוק פיסטוק')).toBeInTheDocument()
+    expect(screen.queryByRole('group', { name: /שילוב/ })).not.toBeInTheDocument()
+    unmount()
+
+    const grouped = normalizeGuide({
+      ...bat,
+      paletteGroups: [
+        { title: 'גווני אדמה', colors: [{ name: 'חיטה', color: '#D8BF94' }, { name: 'חמרה', color: '#B4593B' }] },
+        { title: '', colors: [{ name: 'תכלת', color: '#AAC7DC' }, { name: '', color: '' }] },
+        { title: 'ריק', colors: [] },
+      ],
+    })
+    mocks.loadGuide.mockResolvedValue({ guide: grouped, photos: [] })
+    renderAt('/dress/bat-mitzvah', <DressGuidePage />, '/dress/:slug')
+    const earth = await screen.findByRole('group', { name: 'גווני אדמה' })
+    expect(within(earth).getByText('חמרה')).toBeInTheDocument()
+    const second = screen.getByRole('group', { name: 'שילוב 2' })
+    expect(within(second).getByText('תכלת')).toBeInTheDocument()
+    expect(screen.queryByRole('group', { name: 'ריק' })).not.toBeInTheDocument() // a group without colours is skipped
+  })
+
   it('shows a friendly message for a missing page', async () => {
     mocks.loadGuide.mockResolvedValue(null)
     renderAt('/dress/nope', <DressGuidePage />, '/dress/:slug')
@@ -135,6 +159,41 @@ describe('DressGuidePage (public)', () => {
 })
 
 describe('DressGuideEditor', () => {
+  it('builds separate colour combinations and saves them', async () => {
+    mocks.loadGuide.mockResolvedValue({ guide: bat, photos: [] })
+    renderAt('/dashboard/dress-guides/bat-mitzvah', <DressGuideEditor />, '/dashboard/dress-guides/:slug')
+    // the existing colours stay in one group
+    expect(await screen.findByLabelText('שם צבע 1')).toHaveValue('תכלת')
+    fireEvent.change(screen.getByLabelText('שם שילוב 1'), { target: { value: 'פסטל' } })
+
+    fireEvent.click(screen.getByText('הוספת שילוב צבעים'))
+    const second = screen.getByRole('group', { name: 'שילוב 2' })
+    fireEvent.change(within(second).getByLabelText('שם שילוב 2'), { target: { value: 'גווני אדמה' } })
+    fireEvent.click(within(second).getByText('הוספת צבע'))
+    fireEvent.change(screen.getByLabelText('שם צבע 1 בשילוב 2'), { target: { value: 'חום' } })
+    expect(screen.getByLabelText('גוון לצבע 1 בשילוב 2')).toHaveValue('#6b4a35')
+    expect(screen.getByTestId('guide-preview')).toHaveTextContent('גווני אדמה')
+
+    // reorder: the new combination first
+    fireEvent.click(screen.getByRole('button', { name: 'הזז למעלה: שילוב 2' }))
+    fireEvent.click(screen.getByText('שמור'))
+    await waitFor(() => expect(mocks.saveGuide).toHaveBeenCalled())
+    const groups = mocks.saveGuide.mock.calls[0][0].form.paletteGroups
+    expect(groups.map((g) => g.title)).toEqual(['גווני אדמה', 'פסטל'])
+    expect(groups[0].colors).toEqual([{ name: 'חום', color: '#6B4A35' }])
+    expect(groups[1].colors.map((c) => c.name)).toEqual(bat.paletteGroups[0].colors.map((c) => c.name))
+  })
+
+  it('removing a combination keeps at least one to add colours to', async () => {
+    mocks.loadGuide.mockResolvedValue({ guide: bat, photos: [] })
+    renderAt('/dashboard/dress-guides/bat-mitzvah', <DressGuideEditor />, '/dashboard/dress-guides/:slug')
+    await screen.findByLabelText('שם צבע 1')
+    fireEvent.click(screen.getByText('הוספת שילוב צבעים'))
+    fireEvent.click(screen.getByRole('button', { name: 'הסר שילוב 1' }))
+    expect(screen.queryByLabelText('שם צבע 1')).not.toBeInTheDocument() // the remaining one is the new, empty group
+    expect(screen.queryByRole('button', { name: /הסר שילוב/ })).not.toBeInTheDocument()
+  })
+
   it('edits text, a tip and photos, with a live preview, and saves', async () => {
     mocks.loadGuide.mockResolvedValue({ guide: family, photos })
     renderAt('/dashboard/dress-guides/family', <DressGuideEditor />, '/dashboard/dress-guides/:slug')

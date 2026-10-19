@@ -12,7 +12,7 @@ const photosRef = collection(db, 'dressGuidePhotos')
 const seededFlag = doc(db, 'settings', 'dressGuides')
 
 // Fields saved on a guide document (everything else in the editor state is UI-only)
-const GUIDE_FIELDS = ['name', 'title', 'subtitle', 'intro', 'paletteText', 'palette', 'tips', 'outfits', 'note', 'closing', 'signoff']
+const GUIDE_FIELDS = ['name', 'title', 'subtitle', 'intro', 'paletteText', 'paletteGroups', 'tips', 'outfits', 'note', 'closing', 'signoff']
 
 export function useDressGuides() {
   const [snapshot, loading] = useCollection(query(guidesRef, orderBy('order', 'asc')))
