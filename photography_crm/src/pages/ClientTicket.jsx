@@ -29,6 +29,7 @@ import Card from '../components/ui/Card'
 import Field from '../components/ui/Field'
 import CopyLink from '../components/ui/CopyLink'
 import DateInput from '../components/ui/DatePicker'
+import LeadSourceField from '../components/LeadSourceField'
 import { inputClass, itemClass } from '../components/ui/styles'
 import { printElement } from '../utils/printDocument'
 import { STATUS_OPTIONS } from '../utils/statusConfig'
@@ -376,6 +377,7 @@ export default function ClientTicket() {
                 onChange={(v) => set('gender', v)} />
             </div>
           </Field>
+          <LeadSourceField className="sm:col-span-2" value={form.leadSource} other={form.leadSourceOther} onChange={update} />
           <div className="sm:col-span-2">
             <Toggle text="מאשר/ת קבלת ניוזלטר והטבות" checked={!!form.newsletterConsent}
               onChange={handleNewsletterToggle} />
@@ -405,7 +407,7 @@ export default function ClientTicket() {
           </Field>
           <Field label="חבילה">
             <DisabledHint reason={needsTypeHint} className="block">
-              <select className={`${inputClass()} disabled:pointer-events-none`} value={form.packageId || ''}
+              <select aria-label="חבילה" className={`${inputClass()} disabled:pointer-events-none`} value={form.packageId || ''}
                 onChange={(e) => handlePackageChange(e.target.value)} disabled={!form.photoshootTypeId}>
                 <option value="">בחר חבילה</option>
                 {packages.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}

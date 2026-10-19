@@ -145,4 +145,19 @@ describe('NewClientModal', () => {
     fireEvent.click(screen.getByText('בטל'))
     expect(onClose).toHaveBeenCalled()
   })
+
+  it('"איך הגיע?" offers the closed list, with free text only for "אחר"', async () => {
+    renderModal()
+    const select = screen.getByLabelText('איך הגיע?')
+    expect([...select.options].map((o) => o.textContent)).toEqual(['בחר מקור', 'אינסטגרם', 'פייסבוק', 'מדרג', 'גוגל', 'המלצה', 'אחר'])
+    expect(screen.queryByLabelText('פירוט מקור')).not.toBeInTheDocument()
+    fireEvent.change(select, { target: { value: 'other' } })
+    fireEvent.change(screen.getByLabelText('פירוט מקור'), { target: { value: 'חתונה של חברה' } })
+    const inputs = screen.getAllByRole('textbox')
+    fireEvent.change(inputs[0], { target: { value: 'דנה' } })
+    fireEvent.change(inputs[1], { target: { value: 'לוי' } })
+    fireEvent.click(screen.getByText('צור לקוח'))
+    await waitFor(() => expect(mockCreateClient).toHaveBeenCalledWith(
+      expect.objectContaining({ leadSource: 'other', leadSourceOther: 'חתונה של חברה' })))
+  })
 })

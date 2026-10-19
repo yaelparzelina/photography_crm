@@ -183,10 +183,7 @@ describe('ClientTicket', () => {
     const typeSelect = screen.getByDisplayValue('צילום חתונה')
     fireEvent.change(typeSelect, { target: { value: 'type2' } })
     // After changing type, packageId should be cleared → package select shows empty option
-    const selects = screen.getAllByRole('combobox')
-    // selects[0] = status (top section), selects[1] = type, selects[2] = package
-    const packageSelectEl = selects[2]
-    expect(packageSelectEl.value).toBe('')
+    expect(screen.getByLabelText('חבילה')).toHaveValue('')
   })
 
   it('save button calls updateDoc with form data', async () => {
@@ -480,5 +477,16 @@ describe('ClientTicket', () => {
     renderTicket()
     fireEvent.click(screen.getAllByRole('button', { name: /חזרה ללוח הלקוחות/ })[0])
     expect(mockNavigate).toHaveBeenCalledWith('/dashboard')
+  })
+
+  it('"איך הגיע?" is saved; switching away from "אחר" clears the free text', async () => {
+    setupOnSnapshot(makeSnapshot({ data: { ...clientData, leadSource: 'other', leadSourceOther: 'אירוע' } }))
+    renderTicket()
+    expect(screen.getByLabelText('פירוט מקור')).toHaveValue('אירוע')
+    fireEvent.change(screen.getByLabelText('איך הגיע?'), { target: { value: 'instagram' } })
+    expect(screen.queryByLabelText('פירוט מקור')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByText('שמור שינויים'))
+    await waitFor(() => expect(mockUpdateDoc).toHaveBeenCalledWith(expect.anything(),
+      expect.objectContaining({ leadSource: 'instagram', leadSourceOther: '' })))
   })
 })

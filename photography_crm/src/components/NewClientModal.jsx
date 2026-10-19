@@ -5,11 +5,12 @@ import Button from './ui/Button'
 import Field from './ui/Field'
 import Segmented from './ui/Segmented'
 import DateInput from './ui/DatePicker'
+import LeadSourceField from './LeadSourceField'
 import { inputClass } from './ui/styles'
 import { useClients } from '../hooks/useClients'
 import { usePhotoshootTypes } from '../hooks/usePhotoshootTypes'
 
-const EMPTY_FORM = { firstName: '', lastName: '', phone: '', photoshootTypeId: '', gender: 'female', eventDate: null, notes: '' }
+const EMPTY_FORM = { firstName: '', lastName: '', phone: '', photoshootTypeId: '', gender: 'female', eventDate: null, notes: '', leadSource: '', leadSourceOther: '' }
 
 // `openAfterCreate`: go to the new client's card (the board keeps the owner on the board instead)
 export default function NewClientModal({ isOpen, onClose, openAfterCreate = true }) {
@@ -77,6 +78,8 @@ export default function NewClientModal({ isOpen, onClose, openAfterCreate = true
             {types.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
           </select>
         </Field>
+        <LeadSourceField value={form.leadSource} other={form.leadSourceOther}
+          onChange={(changes) => setForm((f) => ({ ...f, ...changes }))} />
         <Field label="תאריך אירוע">
           <DateInput aria-label="תאריך אירוע" value={form.eventDate} onChange={(d) => set('eventDate', d)} />
         </Field>
