@@ -29,11 +29,12 @@ function Section({ title, children }) {
   )
 }
 
-function Swatches({ colors }) {
+// `compact`: tighter on phones, so a combination of 4–5 colours fits on one line
+function Swatches({ colors, compact = false }) {
   return (
-    <ul className="flex flex-wrap justify-center gap-x-5 gap-y-4">
+    <ul className={`flex flex-wrap justify-center gap-y-4 ${compact ? 'gap-x-2 sm:gap-x-5' : 'gap-x-5'}`}>
       {colors.map((c, i) => (
-        <li key={`${c.name}-${i}`} className="flex flex-col items-center gap-2 w-16">
+        <li key={`${c.name}-${i}`} className={`flex flex-col items-center gap-2 ${compact ? 'w-14 sm:w-16' : 'w-16'}`}>
           <span className="w-12 h-12 rounded-full border border-black/10 shadow-inner"
             style={{ backgroundColor: c.color || '#E8D9C5' }} aria-hidden="true" />
           <span className="text-xs text-center leading-tight">{c.name}</span>
@@ -52,18 +53,23 @@ function Palette({ text, groups }) {
       {text && <p className="text-center leading-relaxed mb-6 whitespace-pre-line">{text}</p>}
       {!separate && groups[0] && <Swatches colors={groups[0].colors} />}
       {separate && (
-        <div className={`grid gap-4 ${groups.length > 1 ? 'sm:grid-cols-2' : ''}`}>
+        // Combinations stacked one under the other; each is a full-width row (name beside its colours)
+        <div className="flex flex-col gap-4">
           {groups.map((g, i) => (
-            <div key={i} className="rounded-2xl bg-[#FBF7F2] border border-[#F0E6D8] px-4 pt-4 pb-5" role="group"
-              aria-label={g.title || `שילוב ${i + 1}`}>
-              <div className="flex justify-center mb-4" aria-hidden="true">
-                {g.colors.map((c, j) => (
-                  <span key={j} className="w-7 h-7 rounded-full border-2 border-[#FBF7F2] -ms-2 first:ms-0"
-                    style={{ backgroundColor: c.color || '#E8D9C5' }} />
-                ))}
+            <div key={i} role="group" aria-label={g.title || `שילוב ${i + 1}`}
+              className="rounded-2xl bg-[#FBF7F2] border border-[#F0E6D8] px-4 py-4 sm:px-5 flex flex-col sm:flex-row sm:items-center gap-4">
+              <div className="sm:w-32 shrink-0 flex flex-col items-center gap-2.5">
+                <div className="flex" aria-hidden="true">
+                  {g.colors.map((c, j) => (
+                    <span key={j} className="w-6 h-6 rounded-full border-2 border-[#FBF7F2] -ms-2 first:ms-0"
+                      style={{ backgroundColor: c.color || '#E8D9C5' }} />
+                  ))}
+                </div>
+                <h3 className={`${t.heading} text-center text-lg leading-tight`}>{g.title || `שילוב ${i + 1}`}</h3>
               </div>
-              <h3 className={`${t.heading} text-center text-lg mb-4`}>{g.title || `שילוב ${i + 1}`}</h3>
-              <Swatches colors={g.colors} />
+              <div className="flex-1 sm:border-s sm:border-[#E8D9C5] sm:ps-4">
+                <Swatches colors={g.colors} compact />
+              </div>
             </div>
           ))}
         </div>
