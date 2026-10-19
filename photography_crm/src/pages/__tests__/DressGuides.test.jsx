@@ -61,10 +61,45 @@ describe('DressGuides list', () => {
 
   it('deletes a guide (with its photos and message) after confirming', async () => {
     renderAt('/', <DressGuides />, '/')
-    fireEvent.click(screen.getAllByText('מחיקה')[0])
+    fireEvent.click(screen.getByRole('button', { name: 'מחיקת צילומי משפחה' }))
     expect(screen.getByText(/גם התמונות שלו וההודעה המוכנה/)).toBeInTheDocument()
     fireEvent.click(screen.getByText('מחק'))
     await waitFor(() => expect(mocks.deleteGuide).toHaveBeenCalledWith(expect.objectContaining({ id: 'family', messageTemplateId: 'm1' })))
+  })
+
+  it('duplicate opens a new page that starts as a copy', () => {
+    renderAt('/', <DressGuides />, '/')
+    fireEvent.click(screen.getByRole('button', { name: 'שכפול בוק בת מצווה' }))
+    expect(mockNavigate).toHaveBeenCalledWith('/dashboard/dress-guides/new', { state: { copyFrom: 'bat-mitzvah' } })
+  })
+})
+
+describe('Duplicating a guide', () => {
+  function renderCopy() {
+    return render(
+      <MemoryRouter initialEntries={[{ pathname: '/dashboard/dress-guides/new', state: { copyFrom: 'family' } }]}>
+        <Routes><Route path="/dashboard/dress-guides/:slug" element={<DressGuideEditor />} /></Routes>
+      </MemoryRouter>
+    )
+  }
+
+  it('copies the text, colours and photos; saving creates a new page with its own copies of the photos', async () => {
+    mocks.loadGuide.mockResolvedValue({ guide: family, photos })
+    renderCopy()
+    expect(await screen.findByDisplayValue('צילומי משפחה (עותק)')).toBeInTheDocument()
+    expect(mocks.loadGuide).toHaveBeenCalledWith('family')
+    expect(screen.getByRole('heading', { name: 'שכפול דף הנחיות' })).toBeInTheDocument()
+    expect(screen.getByDisplayValue('הנחיות לבוש לצילומי משפחה')).toBeInTheDocument()
+    expect(screen.getByLabelText('שם צבע 1')).toHaveValue(family.palette[0].name)
+    expect(screen.getByAltText('תמונה 2')).toHaveAttribute('src', photos[1].src)
+
+    fireEvent.click(screen.getByText('שמור'))
+    await waitFor(() => expect(mocks.saveGuide).toHaveBeenCalled())
+    const arg = mocks.saveGuide.mock.calls[0][0]
+    expect(arg).toMatchObject({ slug: null, previous: null, previousPhotoIds: [] })
+    expect(arg.form).toMatchObject({ name: 'צילומי משפחה (עותק)', palette: family.palette, tips: family.tips })
+    expect(arg.form.messageTemplateId).toBeUndefined()
+    expect(arg.photos.map((p) => [p.src, p.isNew])).toEqual([[photos[0].src, true], [photos[1].src, true]])
   })
 })
 

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Pencil, Trash2, ExternalLink, Image as ImageIcon } from 'lucide-react'
+import { Plus, Pencil, Trash2, ExternalLink, Copy, Image as ImageIcon } from 'lucide-react'
 import { useDressGuides, deleteGuide } from '../hooks/useDressGuides'
 import { guideUrl, guidePreviewHref } from '../utils/dressGuides'
 import Button from '../components/ui/Button'
@@ -41,11 +41,17 @@ export default function DressGuides() {
                   </p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  <Button variant="secondary" size="sm" onClick={() => navigate(`/dashboard/dress-guides/${g.id}`)}>
-                    <Pencil className="w-3.5 h-3.5" /> עריכה
+                  {/* On a phone the buttons show only their icons, so the name keeps its room */}
+                  <Button variant="secondary" size="sm" aria-label={`עריכת ${g.name}`} title="עריכה"
+                    onClick={() => navigate(`/dashboard/dress-guides/${g.id}`)}>
+                    <Pencil className="w-3.5 h-3.5" /> <span className="hidden sm:inline">עריכה</span>
                   </Button>
-                  <Button variant="danger" size="sm" onClick={() => setDeleteTarget(g)}>
-                    <Trash2 className="w-3.5 h-3.5" /> מחיקה
+                  <Button variant="secondary" size="sm" aria-label={`שכפול ${g.name}`} title="שכפול"
+                    onClick={() => navigate('/dashboard/dress-guides/new', { state: { copyFrom: g.id } })}>
+                    <Copy className="w-3.5 h-3.5" /> <span className="hidden sm:inline">שכפול</span>
+                  </Button>
+                  <Button variant="danger" size="sm" aria-label={`מחיקת ${g.name}`} title="מחיקה" onClick={() => setDeleteTarget(g)}>
+                    <Trash2 className="w-3.5 h-3.5" /> <span className="hidden sm:inline">מחיקה</span>
                   </Button>
                 </div>
               </div>

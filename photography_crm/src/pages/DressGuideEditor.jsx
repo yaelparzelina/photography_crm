@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { ArrowRight, Plus, Trash2, ChevronUp, ChevronDown, ChevronRight, ChevronLeft, Upload, ExternalLink } from 'lucide-react'
 import { loadGuide, saveGuide } from '../hooks/useDressGuides'
 import { emptyGuide, suggestColor, guideMessageTitle, guidePreviewHref, SECTION_TITLES } from '../utils/dressGuides'
@@ -107,9 +107,12 @@ const snapshotOf = (form, photos) => JSON.stringify([form, photos.map((p) => p.i
 export default function DressGuideEditor() {
   const { slug } = useParams()
   const isNew = slug === 'new'
+  // Duplicating: a new page that starts as a copy of another one (nothing is saved until "שמור")
+  const location = useLocation()
+  const copyFrom = isNew ? location.state?.copyFrom || null : null
   const navigate = useNavigate()
   const [loaded, setLoaded] = useState(() => (isNew ? { guide: emptyGuide(), photos: [] } : null)) // as saved
-  const [form, setForm] = useState(() => loaded?.guide ?? null)
+  const [form, setForm] = useState(() => (copyFrom ? null : loaded?.guide ?? null))
   const [photos, setPhotos] = useState([])
   const [errors, setErrors] = useState({})
   const [saving, setSaving] = useState(false)
@@ -119,6 +122,18 @@ export default function DressGuideEditor() {
   const [mobileView, setMobileView] = useState('edit')
 
   useEffect(() => {
+    if (copyFrom) {
+      loadGuide(copyFrom).then((data) => {
+        if (!data) { setNotFound(true); return }
+        // Same text, colours and photos; the photos become new copies so the two pages stay independent
+        const content = { ...data.guide, name: `${data.guide.name} (עותק)`, photoIds: [] }
+        delete content.id
+        delete content.messageTemplateId
+        setForm(content)
+        setPhotos(data.photos.map((p) => ({ id: `new-${crypto.randomUUID()}`, src: p.src, isNew: true })))
+      }).catch(() => setNotFound(true))
+      return
+    }
     if (isNew) return
     loadGuide(slug).then((data) => {
       if (!data) { setNotFound(true); return }
@@ -126,7 +141,7 @@ export default function DressGuideEditor() {
       setForm(data.guide)
       setPhotos(data.photos)
     }).catch(() => setNotFound(true))
-  }, [slug, isNew])
+  }, [slug, isNew, copyFrom])
 
   if (notFound) return <div className="text-center py-20 text-gray-400">דף ההנחיות לא נמצא</div>
   if (!form) return <div className="text-center py-20 text-gray-400">טוען...</div>
@@ -180,7 +195,7 @@ export default function DressGuideEditor() {
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div className="flex items-center gap-2">
           <IconButton label="חזרה להנחיות לבוש" onClick={leave}><ArrowRight className="w-5 h-5" /></IconButton>
-          <h1 className="text-2xl font-semibold text-gray-900">{isNew ? 'דף הנחיות חדש' : form.name || 'עריכת דף הנחיות'}</h1>
+          <h1 className="text-2xl font-semibold text-gray-900">{copyFrom ? 'שכפול דף הנחיות' : isNew ? 'דף הנחיות חדש' : form.name || 'עריכת דף הנחיות'}</h1>
         </div>
         <div className="flex items-center gap-2">
           {!isNew && (
