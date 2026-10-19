@@ -240,6 +240,31 @@ describe('DressGuideEditor', () => {
     expect(screen.getByLabelText('גוון לצבע 6')).toHaveValue('#6b4a35')
   })
 
+  it('typing letter by letter passes through a shorter name and still ends on the right shade', async () => {
+    mocks.loadGuide.mockResolvedValue({ guide: bat, photos: [] })
+    renderAt('/dashboard/dress-guides/bat-mitzvah', <DressGuideEditor />, '/dashboard/dress-guides/:slug')
+    fireEvent.click(await screen.findByText('הוספת צבע'))
+    const name = screen.getByLabelText('שם צבע 6')
+    const word = 'ירוק פיסטוק'
+    for (let i = 1; i <= word.length; i++) {
+      fireEvent.change(name, { target: { value: word.slice(0, i) } })
+      if (word.slice(0, i) === 'ירוק') expect(screen.getByLabelText('גוון לצבע 6')).toHaveValue('#6e8c6a')
+    }
+    expect(screen.getByLabelText('גוון לצבע 6')).toHaveValue('#b9c99a')
+    // and back again when the name is shortened
+    fireEvent.change(name, { target: { value: 'ירוק' } })
+    expect(screen.getByLabelText('גוון לצבע 6')).toHaveValue('#6e8c6a')
+  })
+
+  it('a colour picked by hand is kept when the name changes', async () => {
+    mocks.loadGuide.mockResolvedValue({ guide: bat, photos: [] })
+    renderAt('/dashboard/dress-guides/bat-mitzvah', <DressGuideEditor />, '/dashboard/dress-guides/:slug')
+    fireEvent.click(await screen.findByText('הוספת צבע'))
+    fireEvent.change(screen.getByLabelText('גוון לצבע 6'), { target: { value: '#123456' } })
+    fireEvent.change(screen.getByLabelText('שם צבע 6'), { target: { value: 'חום' } })
+    expect(screen.getByLabelText('גוון לצבע 6')).toHaveValue('#123456')
+  })
+
   it('a new page requires a name and is saved without a slug', async () => {
     renderAt('/dashboard/dress-guides/new', <DressGuideEditor />, '/dashboard/dress-guides/:slug')
     fireEvent.click(screen.getByText('שמור'))

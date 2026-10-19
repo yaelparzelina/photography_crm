@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { ArrowRight, Plus, Trash2, ChevronUp, ChevronDown, ChevronRight, ChevronLeft, Upload, ExternalLink } from 'lucide-react'
 import { loadGuide, saveGuide } from '../hooks/useDressGuides'
-import { emptyGuide, emptyColorGroup, suggestColor, guideMessageTitle, guidePreviewHref, SECTION_TITLES } from '../utils/dressGuides'
+import { emptyGuide, emptyColorGroup, suggestColor, isSuggestedColor, guideMessageTitle, guidePreviewHref, SECTION_TITLES } from '../utils/dressGuides'
 import { resizeImage } from '../utils/imageResize'
 import DressGuideView from '../components/dressGuides/DressGuideView'
 import Button from '../components/ui/Button'
@@ -240,10 +240,11 @@ export default function DressGuideEditor() {
     }
   }
 
-  // Changing a colour's name suggests its swatch, unless the colour was picked by hand
+  // Changing a colour's name suggests its swatch, unless the colour was picked by hand.
+  // Any of the suggested shades counts as automatic, so typing "ירוק פיסטוק" passes through "ירוק" and still lands on pistachio.
   function updateSwatch(prev, next) {
     if (next.name !== prev.name) {
-      const wasAuto = !prev.color || prev.color === suggestColor(prev.name)
+      const wasAuto = !prev.color || isSuggestedColor(prev.color)
       const suggestion = suggestColor(next.name)
       if (wasAuto && suggestion) return { ...next, color: suggestion }
     }

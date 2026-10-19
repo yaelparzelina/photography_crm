@@ -35,6 +35,12 @@ export function suggestColor(name) {
   return COLOR_SWATCHES[key] || COLOR_SWATCHES[COLOR_ALIASES[key]] || null
 }
 
+// True for one of the shades above (set by a name), false for a colour picked by hand
+const SUGGESTED = new Set(Object.values(COLOR_SWATCHES).map((c) => c.toLowerCase()))
+export function isSuggestedColor(color) {
+  return SUGGESTED.has((color || '').toLowerCase())
+}
+
 // --- Links & messages ---
 
 // WhatsApp chat with the photographer, from the closing card of each guide
